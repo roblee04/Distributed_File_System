@@ -12,7 +12,6 @@
 #   7. check if a file exists  (static method)
 
 import os
-import sys
 from flask import Flask, request, jsonify
 
 import uvm_fs
@@ -127,5 +126,4 @@ if __name__ == '__main__':
         Happy coding! :)
         """
         )
-    sys.stdout.flush()
     app.run(debug=True)
