@@ -6,6 +6,7 @@
 
 
 # ############################################################################
+# @TODO: NEED TO ANCHOR ALL FILE OPERATIONS AT A SAFE ROOT (NOT JUST ANY PATH!)
 # @TODO: CURRENTLY NOT IMPLEMENTING "DELETE N BYTES": ONLY "DELETE A FILE"
 # ############################################################################
 
@@ -40,7 +41,7 @@ class DistributedFileSystemError(Exception):
 
 ##############################################################################
 # Constant Value(s)
-READ_ENTIRE_PATH   = -1 # used by <read>
+READ_ENTIRE_PATH = -1 # used by <read>
 
 
 ##############################################################################
@@ -80,7 +81,7 @@ def append(path: str, data: str):
 
 
 ##############################################################################
-# Delete N bytes from a path (delete the entire path if N=-1)
+# Delete <path>
 def delete(path: str):
     try:
         os.remove(path)
