@@ -41,7 +41,7 @@ python3 uvm/client_listener.py
 ```
 
 To interact with the webserver, use: `http://<PUBLIC-IP-ADDRESS>:5000/<COMMAND>`
-* ___Important: Flask prints out the WRONG http address!___
+* ___Important: Flask prints out the WRONG IP address!___
   - Find your VM's public IP on the AWS portal.
 * The webserver will print out all available command paths on launch!
 * Use `^C` (control-"C") to terminate the server.
