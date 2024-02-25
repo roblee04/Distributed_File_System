@@ -1,4 +1,4 @@
-# Author: Jordan Randleman - uvm_client_listener.py
+# Author: Jordan Randleman - client_listener.py
 # Purpose:
 #   UVM server functionality to listen to client file operation requests.
 
@@ -14,7 +14,7 @@
 import os
 from flask import Flask, request, jsonify
 
-import uvm_fs
+import fs
 
 ##############################################################################
 # App Creation
@@ -26,9 +26,9 @@ app = Flask(__name__)
 @app.route('/read/<path>/<int:position>/<int:n_bytes>', methods=['GET'])
 def read(path: str, position: int, n_bytes: int):
     try:
-        new_position, data = uvm_fs.read(path, position, n_bytes)
+        new_position, data = fs.read(path, position, n_bytes)
         return jsonify({'position': new_position, 'data': data, }), 200
-    except uvm_fs.DistributedFileSystemError:
+    except fs.DistributedFileSystemError:
         return jsonify({'error': 'missing file'}), 404
     except Exception as err_msg:
         return jsonify({'error': err_msg}), 400
@@ -39,7 +39,7 @@ def read(path: str, position: int, n_bytes: int):
 @app.route('/write/<path>/<data>', methods=['GET'])
 def write(path: str, data: str):
     try:
-        uvm_fs.write(path, data)
+        fs.write(path, data)
         return jsonify({}), 200
     except Exception as err_msg:
         return jsonify({'error': err_msg}), 400
@@ -50,7 +50,7 @@ def write(path: str, data: str):
 @app.route('/append/<path>/<data>', methods=['GET'])
 def append(path: str, data: str):
     try:
-        uvm_fs.append(path, data)
+        fs.append(path, data)
         return jsonify({}), 200
     except Exception as err_msg:
         return jsonify({'error': err_msg}), 400
@@ -61,9 +61,9 @@ def append(path: str, data: str):
 @app.route('/delete/<path>', methods=['GET'])
 def delete(path: str):
     try:
-        uvm_fs.delete(path)
+        fs.delete(path)
         return jsonify({}), 200
-    except uvm_fs.DistributedFileSystemError:
+    except fs.DistributedFileSystemError:
         return jsonify({'error': 'missing file'}), 404
     except Exception as err_msg:
         return jsonify({'error': err_msg}), 400
@@ -74,9 +74,9 @@ def delete(path: str):
 @app.route('/copy/<src_path>/<dest_path>', methods=['GET'])
 def copy(src_path: str, dest_path: str):
     try:
-        uvm_fs.copy(src_path,dest_path)
+        fs.copy(src_path,dest_path)
         return jsonify({}), 200
-    except uvm_fs.DistributedFileSystemError:
+    except fs.DistributedFileSystemError:
         return jsonify({'error': 'missing file'}), 404
     except Exception as err_msg:
         return jsonify({'error': err_msg}), 400
@@ -87,9 +87,9 @@ def copy(src_path: str, dest_path: str):
 @app.route('/rename/<old_path>/<new_path>', methods=['GET'])
 def rename(old_path: str, new_path: str):
     try:
-        uvm_fs.copy(old_path,new_path)
+        fs.copy(old_path,new_path)
         return jsonify({}), 200
-    except uvm_fs.DistributedFileSystemError:
+    except fs.DistributedFileSystemError:
         return jsonify({'error': 'missing file'}), 404
     except Exception as err_msg:
         return jsonify({'error': err_msg}), 400
@@ -100,7 +100,7 @@ def rename(old_path: str, new_path: str):
 @app.route('/exists/<path>', methods=['GET'])
 def exists(path: str):
     try:
-        return jsonify({'exists': uvm_fs.exists(path)}), 200
+        return jsonify({'exists': fs.exists(path)}), 200
     except Exception as err_msg:
         return jsonify({'error': err_msg}), 400
 

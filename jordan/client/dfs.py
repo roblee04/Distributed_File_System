@@ -1,6 +1,6 @@
-# Author: Jordan Randleman - client_lib.py
+# Author: Jordan Randleman - dfs.py
 # Purpose:
-#   Python API that clients can invoke to interact with our DFS.
+#   Python library that clients can invoke to interact with our DFS.
 
 
 

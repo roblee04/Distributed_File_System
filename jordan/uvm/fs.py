@@ -1,4 +1,4 @@
-# Author: Jordan Randleman - uvm_fs.py
+# Author: Jordan Randleman - fs.py
 # Purpose:
 #   UVM server functionality to operate on local files.
 #   Called by the HTTP "client listener" process.
