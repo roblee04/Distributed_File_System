@@ -3,7 +3,7 @@
 --------------------------------------------------------------------
 ## Dependancies:
 
-Create an EC2 instance using all the default settings, EXCEPT:
+Create EC2 instances using all the default settings, EXCEPT:
 * Enable: `Allow HTTPS traffic from the internet`
 * Enable: `Allow HTTP traffic from the internet`
 
@@ -31,16 +31,29 @@ pip install Flask
 2. `uvm`:
    * `fs.py`: UVM local file manipulation logic to execute client requests.
    * `client_listener.py`: UVM HTTP server accepting client file requests.
+     - Also forwards requests to all RVMs
+2. `rvm`:
+   * `fs.py`: RVM local file manipulation logic to execute client requests.
+   * `uvm_listener.py`: RVM HTTP server accepting UVM file requests.
 
 
 --------------------------------------------------------------------
 ## Running the UVM Client-Listener Server:
 
-```sh
-python3 uvm/client_listener.py
-```
+### Dependancies:
+Run `echo "<UVM-PUBLIC-IP-ADDRESS>" > rvm/uvm-ip.txt`.
+* This allows RVMs to detect UVM failures.
 
-To interact with the webserver, use: `http://<PUBLIC-IP-ADDRESS>:5000/<COMMAND>`
+Run `echo "<RVM-1-PUBLIC-IP-ADDRESS>\n..." > uvm/rvm-ips.txt`
+* This allows the UVM to forward file requests to RVMs, and make sure they haven't failed.
+
+
+### Execution:
+On the UVM: `python3 uvm/client_listener.py`
+
+On each RVM: `python3 rvm/uvm_listener.py`
+
+To interact with the UVM webserver, use: `http://<PUBLIC-IP-ADDRESS>:5000/<COMMAND>`
 * ___Important: Flask prints out the WRONG IP address!___
   - Find your VM's public IP on the AWS portal.
 * The webserver will print out all available command paths on launch!

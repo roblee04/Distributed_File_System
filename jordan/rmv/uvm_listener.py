@@ -1,6 +1,6 @@
-# Author: Jordan Randleman - client_listener.py
+# Author: Jordan Randleman - uvm_listener.py
 # Purpose:
-#   UVM server functionality to listen to client file operation requests.
+#   UVM server functionality to listen to uvm file operation requests.
 
 # SUPPORTED APIs:
 #   1. read N bytes (or all bytes if given READ_ENTIRE_PATH)
@@ -22,31 +22,11 @@ app = Flask(__name__)
 
 
 ##############################################################################
-# RVM File Command Forwarding URL Command Extractor
-RVM_IPS_FILENAME = 'rvm-ips.txt'
-
-def rvm_ips():
-    with open(RVM_IPS_FILENAME, 'r') as file:
-        return [line.strip() for line in file]
-
-def get_forwarded_url(original_url, rvm_ip):
-    return 'http://'+rvm_ip+original_url[original_url.find(':5000'):]
-
-def forward_command(original_url):
-    rips = rvm_ips()
-    for rip in rips:
-        rurl = get_forwarded_url(original_url,rip)
-        response = requests.get(rurl)
-        if response.status_code != 200:
-            print('dfs> UVM-to-RVM Forwarding Error: couldn\'t GET '+rurl)
-
-
-##############################################################################
 # Read N bytes from a path (read everything if N=-1)
 @app.route('/read/<path>/<int:position>/<int:n_bytes>', methods=['GET'])
 def read(path: str, position: int, n_bytes: int):
     try:
-        new_position, data = fs.read(path, position, n_bytes) # no need to forward here!
+        new_position, data = fs.read(path, position, n_bytes)
         return jsonify({'position': new_position, 'data': data, }), 200
     except fs.DistributedFileSystemError:
         return jsonify({'error': 'missing file'}), 404
@@ -60,7 +40,6 @@ def read(path: str, position: int, n_bytes: int):
 def write(path: str, data: str):
     try:
         fs.write(path, data)
-        forward_command(request.url)
         return jsonify({}), 200
     except Exception as err_msg:
         return jsonify({'error': err_msg.message}), 400
@@ -72,7 +51,6 @@ def write(path: str, data: str):
 def append(path: str, data: str):
     try:
         fs.append(path, data)
-        forward_command(request.url)
         return jsonify({}), 200
     except Exception as err_msg:
         return jsonify({'error': err_msg.message}), 400
@@ -84,7 +62,6 @@ def append(path: str, data: str):
 def delete(path: str):
     try:
         fs.delete(path)
-        forward_command(request.url)
         return jsonify({}), 200
     except fs.DistributedFileSystemError:
         return jsonify({'error': 'missing file'}), 404
@@ -98,7 +75,6 @@ def delete(path: str):
 def copy(src_path: str, dest_path: str):
     try:
         fs.copy(src_path,dest_path)
-        forward_command(request.url)
         return jsonify({}), 200
     except fs.DistributedFileSystemError:
         return jsonify({'error': 'missing file'}), 404
@@ -112,7 +88,6 @@ def copy(src_path: str, dest_path: str):
 def rename(old_path: str, new_path: str):
     try:
         fs.copy(old_path,new_path)
-        forward_command(request.url)
         return jsonify({}), 200
     except fs.DistributedFileSystemError:
         return jsonify({'error': 'missing file'}), 404
@@ -125,7 +100,7 @@ def rename(old_path: str, new_path: str):
 @app.route('/exists/<path>', methods=['GET'])
 def exists(path: str):
     try:
-        return jsonify({'exists': fs.exists(path)}), 200 # no need to forward here!
+        return jsonify({'exists': fs.exists(path)}), 200
     except Exception as err_msg:
         return jsonify({'error': err_msg.message}), 400
 
