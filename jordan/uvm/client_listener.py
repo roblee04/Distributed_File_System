@@ -44,10 +44,11 @@ def forward_command(original_url):
 
 ##############################################################################
 # Read N bytes from a path (read everything if N=-1)
+# >> NOTE: No need to forward to our RVMs here!
 @app.route('/read/<path>/<int:position>/<int:n_bytes>', methods=['GET'])
 def read(path: str, position: int, n_bytes: int):
     try:
-        new_position, data = fs.read(path, position, n_bytes) # no need to forward here!
+        new_position, data = fs.read(path, position, n_bytes)
         return jsonify({'position': new_position, 'data': data, }), 200
     except fs.DistributedFileSystemError:
         return jsonify({'error': 'missing file'}), 404
@@ -123,10 +124,11 @@ def rename(old_path: str, new_path: str):
 
 ##############################################################################
 # Rename <old_path> as <new_path>
+# >> NOTE: No need to forward to our RVMs here!
 @app.route('/exists/<path>', methods=['GET'])
 def exists(path: str):
     try:
-        return jsonify({'exists': fs.exists(path)}), 200 # no need to forward here!
+        return jsonify({'exists': fs.exists(path)}), 200
     except Exception as err_msg:
         return jsonify({'error': str(err_msg)}), 400
 
