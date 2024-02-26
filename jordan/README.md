@@ -1,7 +1,7 @@
 # Jordan's Development Folder for COEN 317
 
 --------------------------------------------------------------------
-## Dependancies:
+## Dependencies:
 
 Create EC2 instances using all the default settings, EXCEPT:
 * Enable: `Allow HTTPS traffic from the internet`
