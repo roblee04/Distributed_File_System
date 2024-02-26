@@ -12,6 +12,7 @@
 #   7. check if a file exists  (static method)
 
 import os
+import requests
 from flask import Flask, request, jsonify
 
 import fs
@@ -27,7 +28,7 @@ RVM_IPS_FILENAME = 'rvm-ips.txt'
 
 def rvm_ips():
     with open(RVM_IPS_FILENAME, 'r') as file:
-        return [line.strip() for line in file]
+        return [line for line in [line.strip() for line in file.read().split('\n')] if len(line) > 0]
 
 def get_forwarded_url(original_url, rvm_ip):
     return 'http://'+rvm_ip+original_url[original_url.find(':5000'):]
@@ -51,7 +52,7 @@ def read(path: str, position: int, n_bytes: int):
     except fs.DistributedFileSystemError:
         return jsonify({'error': 'missing file'}), 404
     except Exception as err_msg:
-        return jsonify({'error': err_msg.message}), 400
+        return jsonify({'error': str(err_msg)}), 400
 
 
 ##############################################################################
@@ -63,7 +64,7 @@ def write(path: str, data: str):
         forward_command(request.url)
         return jsonify({}), 200
     except Exception as err_msg:
-        return jsonify({'error': err_msg.message}), 400
+        return jsonify({'error': str(err_msg)}), 400
 
 
 ##############################################################################
@@ -75,7 +76,7 @@ def append(path: str, data: str):
         forward_command(request.url)
         return jsonify({}), 200
     except Exception as err_msg:
-        return jsonify({'error': err_msg.message}), 400
+        return jsonify({'error': str(err_msg)}), 400
 
 
 ##############################################################################
@@ -89,7 +90,7 @@ def delete(path: str):
     except fs.DistributedFileSystemError:
         return jsonify({'error': 'missing file'}), 404
     except Exception as err_msg:
-        return jsonify({'error': err_msg.message}), 400
+        return jsonify({'error': str(err_msg)}), 400
 
 
 ##############################################################################
@@ -103,7 +104,7 @@ def copy(src_path: str, dest_path: str):
     except fs.DistributedFileSystemError:
         return jsonify({'error': 'missing file'}), 404
     except Exception as err_msg:
-        return jsonify({'error': err_msg.message}), 400
+        return jsonify({'error': str(err_msg)}), 400
 
 
 ##############################################################################
@@ -117,7 +118,7 @@ def rename(old_path: str, new_path: str):
     except fs.DistributedFileSystemError:
         return jsonify({'error': 'missing file'}), 404
     except Exception as err_msg:
-        return jsonify({'error': err_msg.message}), 400
+        return jsonify({'error': str(err_msg)}), 400
 
 
 ##############################################################################
@@ -127,7 +128,7 @@ def exists(path: str):
     try:
         return jsonify({'exists': fs.exists(path)}), 200 # no need to forward here!
     except Exception as err_msg:
-        return jsonify({'error': err_msg.message}), 400
+        return jsonify({'error': str(err_msg)}), 400
 
 
 ##############################################################################

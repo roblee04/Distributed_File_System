@@ -19,7 +19,6 @@ python3 get-pip.py --user
 sudo yum update -y
 sudo yum install git -y
 git clone https://github.com/roblee04/Distributed_File_System/
-cd Distributed_File_System
 pip install Flask
 ```
 
@@ -44,7 +43,7 @@ pip install Flask
 Run `echo "<UVM-PUBLIC-IP-ADDRESS>" > rvm/uvm-ip.txt`.
 * This allows RVMs to detect UVM failures.
 
-Run `echo "<RVM-1-PUBLIC-IP-ADDRESS>\n..." > uvm/rvm-ips.txt`
+Add each of your RVMs' public IP addresses, one address per line, to a file named `rvm-ips.txt` within the `uvm` subdirectory.
 * This allows the UVM to forward file requests to RVMs, and make sure they haven't failed.
 
 
