@@ -5,8 +5,9 @@
 
 
 # ############################################################################
-# @TODO: support dfs class http calls to server. route them to corresponding areas on uvm
+# @TODO: Who initializes the ring? the server or nodes?
 # @TODO: Pool of VMs. In case of failure, allow UVMs to request for another VM (IP addr)
+#        May or may not need concurrency control.
 # ############################################################################
 
 # SUPPORTED ROUTES:
@@ -28,8 +29,9 @@ app = Flask(__name__)
 ##############################################################################
 # ROUTING LOGIC
 
+# need to add concurrency control
 vm_pool = [] # add VMs manually
-nodes = []
+nodes = ["127.0.0.1:5000"] # temp, for testing
 
 def init_server():
     # create first node, UVM will create replicas
@@ -55,9 +57,10 @@ def route(path: str):
 
     # OUTPUT, corresponding node ip
     except Exception as err:
-        return err.message
+        return err.args[0]
 
 
+# need locking?
 # Global Election Counter
 ELECTION_COUNTER = 0
 
@@ -80,7 +83,7 @@ def read(path: str, position: int, n_bytes: int):
             raise Exception("Error Code " + response.status_code)
 
     except Exception as err_msg:
-        return jsonify({'error': err_msg.message}), 400
+        return jsonify({'error': err_msg.args[0]}), 400
 
 
 ##############################################################################
@@ -88,6 +91,7 @@ def read(path: str, position: int, n_bytes: int):
 @app.route('/write/<path>/<data>', methods=['GET'])
 def write(path: str, data: str):
     try:
+        print("hit")
         # find route, and send request to node
         node_ip = route(path)
         url = f"{node_ip}/write/{path}/{data}"
@@ -99,7 +103,7 @@ def write(path: str, data: str):
             raise Exception("Error Code " + response.status_code)
 
     except Exception as err_msg:
-        return jsonify({'error': err_msg.message}), 400
+        return jsonify({'error': err_msg.args[0]}), 400
 
 
 ##############################################################################
@@ -118,7 +122,7 @@ def append(path: str, data: str):
             raise Exception("Error Code " + response.status_code)
 
     except Exception as err_msg:
-        return jsonify({'error': err_msg.message}), 400
+        return jsonify({'error': err_msg.args[0]}), 400
 
 
 ##############################################################################
@@ -135,7 +139,7 @@ def delete(path: str):
             raise Exception("Error Code " + response.status_code)
 
     except Exception as err_msg:
-        return jsonify({'error': err_msg.message}), 400
+        return jsonify({'error': err_msg.args[0]}), 400
 
 
 ##############################################################################
@@ -143,7 +147,7 @@ def delete(path: str):
 @app.route('/copy/<src_path>/<dest_path>', methods=['GET'])
 def copy(src_path: str, dest_path: str):
     try:
-        node_ip = route(path)
+        node_ip = route(src_path)
         url = f"{node_ip}/copy/{src_path}/{dest_path}"
         response = requests.get(url)
         if response.status_code == 200:
@@ -152,7 +156,7 @@ def copy(src_path: str, dest_path: str):
             raise Exception("Error Code " + response.status_code)
 
     except Exception as err_msg:
-        return jsonify({'error': err_msg.message}), 400
+        return jsonify({'error': err_msg.args[0]}), 400
 
 
 ##############################################################################
@@ -160,8 +164,8 @@ def copy(src_path: str, dest_path: str):
 @app.route('/rename/<old_path>/<new_path>', methods=['GET'])
 def rename(old_path: str, new_path: str):
     try:
-        node_ip = route(path)
-        url = f"{node_ip}/delete/{path}"
+        node_ip = route(old_path)
+        url = f"{node_ip}/rename/{old_path}/{new_path}"
         response = requests.get(url)
         if response.status_code == 200:
             return jsonify({}), 200
@@ -169,7 +173,7 @@ def rename(old_path: str, new_path: str):
             raise Exception("Error Code " + response.status_code)
 
     except Exception as err_msg:
-        return jsonify({'error': err_msg.message}), 400
+        return jsonify({'error': err_msg.args[0]}), 400
 
 
 ##############################################################################
@@ -186,12 +190,15 @@ def exists(path: str):
             raise Exception("Error Code " + response.status_code)
 
     except Exception as err_msg:
-        return jsonify({'error': err_msg.message}), 400
+        return jsonify({'error': err_msg.args[0]}), 400
 
-
-
+##############################################################################
+# gives machines to nodes that need it
+@app.route('/getmachine', methods=['GET'])
+def getmachine():
+    return request_replica()
 
 ##############################################################################
 # Start the server
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', port=8002, debug=True)
