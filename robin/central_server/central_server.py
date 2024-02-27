@@ -22,6 +22,7 @@
 import os
 from flask import Flask, request, jsonify
 import requests
+from threading import Lock
 ##############################################################################
 # App Creation
 app = Flask(__name__)
@@ -29,20 +30,45 @@ app = Flask(__name__)
 ##############################################################################
 # ROUTING LOGIC
 
-# need to add concurrency control
-vm_pool = [] # add VMs manually
-nodes = ["127.0.0.1:5000"] # temp, for testing
+# add machine IPs from file
+def machine_pool(file_name):
+    pool = []
+    with open(file_name, 'r') as file:
+        for ip in file.readlines():
+            pool.append(ip.strip())
+    return pool
 
-def init_server():
-    # create first node, UVM will create replicas
-    first_node = vm_pool.pop(0)
-    nodes.append(first_node)
+# thread safe global variables
+POOL_IPS_FILENAME = 'pool-ips.txt'
+vm_pool_lock = Lock()
+vm_pool = machine_pool(POOL_IPS_FILENAME)
+
+
+UVM_IPS_FILENAME = 'uvm-ips.txt'
+node_lock = Lock()
+nodes = machine_pool(UVM_IPS_FILENAME)
+
+print(vm_pool, nodes)
 
 def request_replica():
-    if len(vm_pool) >= 1:
-        return vm_pool.pop(0)
+    with vm_pool_lock:
+        if len(vm_pool) >= 1:
+            return vm_pool.pop(0)
+        else:
+            raise Exception('error: VM pool is empty')
+
+def replace_uvm(old_uvm, new_uvm):
+    print(nodes)
+    if old_uvm in nodes:
+        with node_lock:
+            idx = nodes.index(old_uvm)
+            del nodes[idx]
+            nodes.insert(idx, new_uvm)
+            return nodes
     else:
-        raise Exception('error: VM pool is empty')
+        raise Exception('error: No UVM to be replaced')
+
+
 
 # if file found, route to that node
 def route(path: str):
@@ -60,25 +86,20 @@ def route(path: str):
         return err.args[0]
 
 
-# need locking?
-# Global Election Counter
-ELECTION_COUNTER = 0
-
 ##############################################################################
 # Read N bytes from a path (read everything if N=-1)
-@app.route('/read/<path>/<int:position>/<int:n_bytes>', methods=['GET'])
-def read(path: str, position: int, n_bytes: int):
+@app.route('/read/<path>', methods=['GET'])
+def read(path: str):
     try:
         # find route, and send request to node
         node_ip = route(path)
-        url = f"{node_ip}/read/{path}/{position}/{n_bytes}"
+        url = f"{node_ip}/read/{path}"
         response = requests.get(url).json()
 
         # when the node responds back, forward reponse back to client
         if response.status_code == 200:
-            new_position = response.get("position")
             data = response.get("data")
-            return jsonify({'position': new_position, 'data': data}), 200
+            return jsonify({'data': data}), 200
         else:
             raise Exception("Error Code " + response.status_code)
 
@@ -195,8 +216,14 @@ def exists(path: str):
 ##############################################################################
 # gives machines to nodes that need it
 @app.route('/getmachine', methods=['GET'])
-def getmachine():
+def get_machine():
     return request_replica()
+
+##############################################################################
+# find a new leader and replace current
+@app.route('/elect/<old_uvm_ip>/<new_uvm_ip>', methods=['GET'])
+def elect(old_uvm_ip: str, new_uvm_ip: str):
+    return replace_uvm(old_uvm_ip, new_uvm_ip)
 
 ##############################################################################
 # Start the server
