@@ -13,13 +13,13 @@
 
 
 # SUPPORTED APIs:
-#   1. read N bytes (or all bytes if given READ_ENTIRE_PATH)
-#   2. write N bytes (also creates files)
-#   3. append N bytes (also creates files)
-#   4. delete a file (static method)
-#   5. copy a file  (static method)
-#   6. rename (also moves) a file  (static method)
-#   7. check if a file exists  (static method)
+#   1. read a file
+#   2. write data (also creates files)
+#   3. append data (also creates files)
+#   4. delete a file
+#   5. copy a file
+#   6. rename (also moves) a file
+#   7. check if a file exists
 
 import os
 import shutil

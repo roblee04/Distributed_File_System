@@ -3,13 +3,13 @@
 #   UVM server functionality to listen to client file operation requests.
 
 # SUPPORTED APIs:
-#   1. read N bytes (or all bytes if given READ_ENTIRE_PATH)
-#   2. write N bytes (also creates files)
-#   3. append N bytes (also creates files)
-#   4. delete a file (static method)
-#   5. copy a file  (static method)
-#   6. rename (also moves) a file  (static method)
-#   7. check if a file exists  (static method)
+#   1. read a file
+#   2. write data (also creates files)
+#   3. append data (also creates files)
+#   4. delete a file
+#   5. copy a file
+#   6. rename (also moves) a file
+#   7. check if a file exists
 
 import os
 import requests
@@ -43,13 +43,13 @@ def forward_command(original_url):
 
 
 ##############################################################################
-# Read N bytes from a path (read everything if N=-1)
+# Read N bytes from a path
 # >> NOTE: No need to forward to our RVMs here!
-@app.route('/read/<path>/<int:position>/<int:n_bytes>', methods=['GET'])
-def read(path: str, position: int, n_bytes: int):
+@app.route('/read/<path>', methods=['GET'])
+def read(path: str):
     try:
-        new_position, data = fs.read(path, position, n_bytes)
-        return jsonify({'position': new_position, 'data': data, }), 200
+        _, data = fs.read(path, 0, fs.READ_ENTIRE_PATH)
+        return jsonify({'data': data, }), 200
     except fs.DistributedFileSystemError:
         return jsonify({'error': 'missing file'}), 404
     except Exception as err_msg:
