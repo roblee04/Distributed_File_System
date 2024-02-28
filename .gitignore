@@ -160,5 +160,3 @@ cython_debug/
 #.idea/
 .DS_Store
 jordan/TODO.md
-jordan/ips/rvm.txt
-jordan/ips/uvm.txt

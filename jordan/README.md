@@ -40,12 +40,13 @@ pip install Flask
 ## Running the UVM Client-Listener Server:
 
 ### Associating the UVM to RVMs:
-Run `echo "<UVM-PUBLIC-IP-ADDRESS>" > ips/uvm.txt`.
+Write your UVM's public IP address in `ips/uvm.txt`.
+* Find the UVM's public IP on the AWS portal!
 * This allows RVMs to detect UVM failures.
 
-Add each RVM public IP address, one per line, to a file named `ips/rvm.txt`.
-* This allows UVMs to forward file requests to their RVMs, and for RVMs to 
-  monitor each other's health.
+Write each RVM public IP address, one per line, in `ips/rvm.txt`.
+* This allows UVMs to forward file requests to their RVMs.
+* Also allows for RVMs to monitor each other's health.
 
 
 ### Running the UVM's File System Web Server:
