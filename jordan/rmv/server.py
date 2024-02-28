@@ -1,6 +1,7 @@
-# Author: Jordan Randleman - uvm_listener.py
+# Author: Jordan Randleman - server.py
 # Purpose:
-#   UVM server functionality to listen to uvm file operation requests.
+#   RVM server functionality to listen to uvm file operation requests.
+#   Also monitors the other RVMs via a leadership election protocol.
 
 # SUPPORTED APIs:
 #   1. read a file

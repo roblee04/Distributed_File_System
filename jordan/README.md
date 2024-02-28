@@ -29,11 +29,11 @@ pip install Flask
    * `dfs.py`: Python skeleton code for users to interface with our DFS.
 2. `uvm`:
    * `fs.py`: UVM local file manipulation logic to execute client requests.
-   * `client_listener.py`: UVM HTTP server accepting client file requests.
+   * `server.py`: UVM HTTP server accepting client file requests.
      - Also forwards requests to all RVMs
 2. `rvm`:
    * `fs.py`: RVM local file manipulation logic to execute client requests.
-   * `uvm_listener.py`: RVM HTTP server accepting UVM file requests.
+   * `server.py`: RVM HTTP server accepting UVM file requests.
 
 
 --------------------------------------------------------------------
@@ -48,9 +48,9 @@ Add each of your RVMs' public IP addresses, one address per line, to a file name
 
 
 ### Running the UVM's File System Web Server:
-On the UVM: `python3 uvm/client_listener.py`
+On the UVM: `python3 uvm/server.py`
 
-On each RVM: `python3 rvm/uvm_listener.py`
+On each RVM: `python3 rvm/server.py`
 
 To interact with the UVM webserver, use: `http://<PUBLIC-IP-ADDRESS>:5000/<COMMAND>`
 * ___Important: Flask prints out the WRONG IP address!___
