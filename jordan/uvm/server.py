@@ -24,7 +24,7 @@ app = Flask(__name__)
 
 ##############################################################################
 # RVM File Command Forwarding URL Command Extractor
-RVM_IPS_FILENAME = 'rvm-ips.txt'
+RVM_IPS_FILENAME = '../ips/rvm.txt'
 
 def rvm_ips():
     with open(RVM_IPS_FILENAME, 'r') as file:

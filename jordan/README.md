@@ -40,11 +40,12 @@ pip install Flask
 ## Running the UVM Client-Listener Server:
 
 ### Associating the UVM to RVMs:
-Run `echo "<UVM-PUBLIC-IP-ADDRESS>" > rvm/uvm-ip.txt`.
+Run `echo "<UVM-PUBLIC-IP-ADDRESS>" > ips/uvm.txt`.
 * This allows RVMs to detect UVM failures.
 
-Add each of your RVMs' public IP addresses, one address per line, to a file named `rvm-ips.txt` within the `uvm` subdirectory.
-* This allows the UVM to forward file requests to RVMs, and make sure they haven't failed.
+Add each RVM public IP address, one per line, to a file named `ips/rvm.txt`.
+* This allows UVMs to forward file requests to their RVMs, and for RVMs to 
+  monitor each other's health.
 
 
 ### Running the UVM's File System Web Server:
