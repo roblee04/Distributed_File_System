@@ -167,7 +167,7 @@ def write_rvm_ips(rvm_ips_contents: str):
 # Listen for a ping from the RVM leader: elect a new leader upon death.
 # Track last time pinged by leader
 last_leader_ping_time_lock = threading.Lock()
-last_leader_ping_time = time.time()
+last_leader_ping_time = time.time() - LEADER_PING_TIMEOUT_SECONDS # force an election at start time
 
 
 def reset_last_leader_ping_time():
@@ -183,8 +183,7 @@ def time_since_last_leader_ping():
 
 # Ping an IP address and return if got a valid response
 def ping_ip(ip_address, command):
-    url = 'http://'+ip_address+':5000/'+command
-    response = requests.get(url)
+    response = requests.get('http://'+ip_address+':5000/'+command)
     return response.status_code == 200
 
 
@@ -273,6 +272,7 @@ leader_pinging_rvms = False
 # Assume leadership and listen for RVM pings
 @app.route('/rvm_become_leader', methods=['GET'])
 def rvm_become_leader():
+    print('rvm> Became the leader!')
     global leader_pinging_rvms
     try:
         with leader_pinging_rvms_lock:
@@ -298,6 +298,11 @@ def rvm_update_rvm_ips(ip_address_list: str):
 
 ##############################################################################
 # Start the server
+# Track leader pinging status
+rvm_pinging_leader_lock = threading.Lock()
+rvm_pinging_leader = False
+
+
 if __name__ == '__main__':
     # Don't even ask. Message always prints double otherwise lmao
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
@@ -306,7 +311,7 @@ if __name__ == '__main__':
         Welcome to Jordan, Rahul, and Robin's COEN 317 Project!
         Flask will communicate this server's "http" address!
         Communicate to our server by executing GET requests to the following routes:
-            /read/<path>/<int:position>/<int:n_bytes>
+            /read/<path>
             /write/<path>/<data>
             /append/<path>/<data>
             /delete/<path>
@@ -317,5 +322,10 @@ if __name__ == '__main__':
         Happy coding! :)
         """
         )
-    threading.Thread(target=elect_leader_if_missing_ping, daemon=True).start()
+    # Only start leader/RVM pinging detection thread if not already started
+    # => Accounts for flask weirdness with DEBUG mode randomly restarting things
+    with rvm_pinging_leader_lock:
+        if not rvm_pinging_leader:
+            threading.Thread(target=elect_leader_if_missing_ping, daemon=True).start()
+            rvm_pinging_leader = True
     app.run(host='0.0.0.0', debug=True)

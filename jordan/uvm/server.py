@@ -143,7 +143,7 @@ if __name__ == '__main__':
         Welcome to Jordan, Rahul, and Robin's COEN 317 Project!
         Flask will communicate this server's "http" address!
         Communicate to our server by executing GET requests to the following routes:
-            /read/<path>/<int:position>/<int:n_bytes>
+            /read/<path>
             /write/<path>/<data>
             /append/<path>/<data>
             /delete/<path>
