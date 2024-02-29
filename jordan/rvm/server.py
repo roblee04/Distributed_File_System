@@ -234,8 +234,7 @@ def get_new_rvm_ip():
 def get_dead_rvm_ips(rips):
     dead_ips = []
     for rip in rips:
-        response = requests.get('http://'+rip+':5000/rvm_leader_ping')
-        if response.status_code != 200:
+        if not ping_ip(rip,'rvm_leader_ping'):
             print('rvm> Leader failed to reach dead RVM (will replace it): '+rip)
             dead_ips.append(rip)
 
@@ -250,8 +249,7 @@ def forward_new_rvm_ips(new_ips):
     print('rvm> leader is forwarding new IP address list to RVMs ...')
     ip_address_list = urllib.parse.quote('\n'.join(new_ips))
     for ip in new_ips:
-        response = requests.get('http://'+ip+':5000/rvm_update_rvm_ips/'+ip_address_list)
-        if response.status_code != 200:
+        if not ping_ip(ip,'rvm_update_rvm_ips/'+ip_address_list):
             print("rvm> Error trying to forward new IP address list to RVM "+ip)
     print('rvm> leader finished forwarding the new IP address list!')
 
