@@ -2,7 +2,7 @@
 # Purpose:
 #   UVM server functionality to listen to client file operation requests.
 
-# SUPPORTED APIs:
+# SUPPORTED FILE APIs:
 #   1. read a file
 #   2. write data (also creates files)
 #   3. append data (also creates files)
