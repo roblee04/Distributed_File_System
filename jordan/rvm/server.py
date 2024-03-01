@@ -309,6 +309,11 @@ def forward_new_uvm_ip_to_rvms(public_ip):
             print("rvm> Error trying to forward new UVM IP address to RVM "+rip)
 
 
+# Launch the UVM Server
+def launch_uvm_server():
+    os.system("python3 "+os.getcwd()+"/../uvm/server.py > logs.txt")
+
+
 # Replace self with a new RVM, elect a new leader, and become the new UVM
 def become_uvm():
     print('rvm> Becoming a UVM!')
@@ -325,7 +330,8 @@ def become_uvm():
     # 5. Elevate current VM to become a UVM instead of an RVM
     print('rvm> Starting the UVM process: see output in "./logs.txt"')
     print('rvm> Starting command: python3 '+os.getcwd()+'/../uvm/server.py > logs.txt')
-    os.system("python3 "+os.getcwd()+"/../uvm/server.py > logs.txt")
+    threading.Thread(target=launch_uvm_server, daemon=True).start()
+    time.sleep(0.5) # wait for the <system> call in the thread above to trigger
     print('rvm> Terminating RVM: became a UVM! :)')
     os._exit(0)
 
