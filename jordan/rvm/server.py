@@ -328,7 +328,7 @@ def rvm_become_leader():
 def rvm_update_rvm_ips(ip_address_list: str):
     try:
         ip_address_list = urllib.parse.unquote(ip_address_list)
-        print('rvm> New RVM <ip_address_list>: '+ip_address_list)
+        print('rvm> New RVM <ip_address_list>: '+ip_address_list.strip().replace('\n',', '))
         write_rvm_ips(ip_address_list)
         return jsonify({}), 200
     except Exception as err_msg:
