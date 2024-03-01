@@ -48,7 +48,7 @@ def forward_command(original_url):
     for rip in rips:
         rurl = get_forwarded_url(original_url,rip)
         if get_request(rurl) != 200:
-            print('dfs> UVM-to-RVM Forwarding Error: couldn\'t GET '+rurl)
+            print('uvm> UVM-to-RVM Forwarding Error: couldn\'t GET '+rurl)
 
 
 ##############################################################################
