@@ -226,9 +226,13 @@ def time_since_last_leader_ping():
         return time.time() - last_leader_ping_time
 
 
-# Ping an IP address and return if got a valid response
-def ping_ip(ip_address, command):
+# Ping an RVM IP address and return if got a valid response
+def ping_rvm(ip_address, command):
     return get_request('http://'+ip_address+':5000/'+command) == 200
+
+# Ping a UVM IP address and return if got a valid response
+def ping_uvm(ip_address, command):
+    return get_request('http://'+ip_address+':5001/'+command) == 200
 
 
 # Execute leader election protocol
@@ -240,7 +244,7 @@ def elect_leader():
     leaders.sort(reverse=True)
     for leader in leaders:
         leader_ip = rips[leader_ips.index(leader)]
-        if ping_ip(leader_ip,'rvm_become_leader'):
+        if ping_rvm(leader_ip,'rvm_become_leader'):
             print('rvm> Successfully pinged '+leader_ip+' to become the leader!')
             return
         print('rvm> Failed pinging '+leader_ip+' to become the leader!')
@@ -301,7 +305,7 @@ def forward_new_uvm_ip_to_rvms(public_ip):
     rips = rvm_ips()
     public_ip = urllib.parse.quote(public_ip)
     for rip in rips:
-        if not ping_ip(rip,'rvm_update_uvm_ip/'+public_ip):
+        if not ping_rvm(rip,'rvm_update_uvm_ip/'+public_ip):
             print("rvm> Error trying to forward new UVM IP address to RVM "+rip)
 
 
@@ -330,7 +334,7 @@ def become_uvm():
 def become_uvm_if_missing_ping():
     while True:
         uip = uvm_ip()
-        if not ping_ip(uip,'/uvm_leader_ping'):
+        if not ping_uvm(uip,'/uvm_leader_ping'):
             print('rvm> Failed to reach UVM (will replace with self): '+uip)
             become_uvm()
         else:
@@ -344,7 +348,7 @@ def become_uvm_if_missing_ping():
 def get_dead_rvm_ips(rips):
     dead_ips = []
     for rip in rips:
-        if not ping_ip(rip,'rvm_leader_ping'):
+        if not ping_rvm(rip,'rvm_leader_ping'):
             print('rvm> Leader failed to reach dead RVM (will replace it): '+rip)
             dead_ips.append(rip)
     return dead_ips
@@ -358,12 +362,12 @@ def get_new_rvm_ips(total_new_rvms):
 # Forward the new RVM IP address list to the UVM and each RVM
 def forward_new_rvm_ips_to_rvms(new_rvm_ips, ip_address_list):
     for rip in new_rvm_ips:
-        if not ping_ip(rip,'rvm_update_rvm_ips/'+ip_address_list):
+        if not ping_rvm(rip,'rvm_update_rvm_ips/'+ip_address_list):
             print("rvm> Error trying to forward new RVM IP address list to RVM "+rip)
 
 
 def forward_new_rvm_ips_to_uvm(uvm_ip, ip_address_list):
-    if not ping_ip(uvm_ip,'uvm_update_rvm_ips/'+ip_address_list):
+    if not ping_uvm(uvm_ip,'uvm_update_rvm_ips/'+ip_address_list):
         print("rvm> Error trying to forward new RVM IP address list to UVM "+uvm_ip)
 
 

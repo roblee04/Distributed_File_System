@@ -54,7 +54,7 @@ On the UVM: `python3 uvm/server.py`
 
 On each RVM: `python3 rvm/server.py`
 
-To interact with the UVM webserver, use: `http://<PUBLIC-IP-ADDRESS>:5000/<COMMAND>`
+To interact with the UVM webserver, use: `http://<PUBLIC-IP-ADDRESS>:5001/<COMMAND>`
 * ___Important: Flask prints out the WRONG IP address!___
   - Find your VM's public IP on the AWS portal.
 * The UVM will print out all available command paths on launch!

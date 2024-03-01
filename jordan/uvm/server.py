@@ -52,7 +52,7 @@ def write_rvm_ips(rvm_ips_contents: str):
 
 
 def get_forwarded_url(original_url, rvm_ip):
-    return 'http://'+rvm_ip+original_url[original_url.find(':5000'):]
+    return 'http://'+rvm_ip+':5000'+original_url[original_url.find(':5001')+5:]
 
 
 def forward_command(original_url):
@@ -203,4 +203,4 @@ if __name__ == '__main__':
     Happy coding! :)
     """
     )
-    app.run(host='0.0.0.0', debug=True, use_reloader=False)
+    app.run(host='0.0.0.0', port=5001, debug=True, use_reloader=False)
