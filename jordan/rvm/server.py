@@ -46,7 +46,7 @@ import fs
 app = Flask(__name__)
 
 # How long a leader has to ping
-LEADER_PING_TIMEOUT_SECONDS = 5
+LEADER_PING_TIMEOUT_SECONDS = 3
 
 # How often we check for a leader ping
 LEADER_PING_CHECK_TIMEOUT_SECONDS = 0.5
@@ -216,7 +216,7 @@ def elect_leader_if_missing_ping():
     while True:
         time_elapsed = time_since_last_leader_ping()
         if time_elapsed >= LEADER_PING_TIMEOUT_SECONDS:
-            print('Time between pings '+str(time_elapsed)+'s passsed threshold '+str(LEADER_PING_TIMEOUT_SECONDS)+'s!')
+            print('rvm> Time between pings '+str(time_elapsed)+'s passsed threshold '+str(LEADER_PING_TIMEOUT_SECONDS)+'s!')
             elect_leader()
             reset_last_leader_ping_time()
         time.sleep(LEADER_PING_CHECK_TIMEOUT_SECONDS)
@@ -315,11 +315,6 @@ def rvm_update_rvm_ips(ip_address_list: str):
 
 ##############################################################################
 # Start the server
-# Track leader pinging status
-rvm_pinging_leader_lock = threading.Lock()
-rvm_pinging_leader = False
-
-
 if __name__ == '__main__':
     # Don't even ask. Message always prints double otherwise lmao
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
@@ -339,10 +334,5 @@ if __name__ == '__main__':
         Happy coding! :)
         """
         )
-    # Only start leader/RVM pinging detection thread if not already started
-    # => Accounts for flask weirdness with DEBUG mode randomly restarting things
-    with rvm_pinging_leader_lock:
-        if not rvm_pinging_leader:
-            threading.Thread(target=elect_leader_if_missing_ping, daemon=True).start()
-            rvm_pinging_leader = True
-    app.run(host='0.0.0.0', debug=True)
+    threading.Thread(target=elect_leader_if_missing_ping, daemon=True).start()
+    app.run(host='0.0.0.0', debug=True, use_reloader=False)
