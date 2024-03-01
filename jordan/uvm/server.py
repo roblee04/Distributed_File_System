@@ -178,7 +178,7 @@ def uvm_update_rvm_ips(ip_address_list: str):
 @app.route('/uvm_leader_ping', methods=['GET'])
 def uvm_leader_ping():
     try:
-        print('uvm> pinged by leader!')
+        print('uvm> Pinged by leader!')
         return jsonify({}), 200
     except Exception as err_msg:
         return jsonify({'error': str(err_msg)}), 400

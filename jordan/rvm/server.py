@@ -233,7 +233,7 @@ def ping_ip(ip_address, command):
 
 # Execute leader election protocol
 def elect_leader():
-    print('rvm> electing a leader!')
+    print('rvm> Electing a leader!')
     rips = rvm_ips()
     leader_ips = [int(rip.replace('.','')) for rip in rips]
     leaders = leader_ips.copy() # sorted in descending order to ping leaders
@@ -241,9 +241,9 @@ def elect_leader():
     for leader in leaders:
         leader_ip = rips[leader_ips.index(leader)]
         if ping_ip(leader_ip,'rvm_become_leader'):
-            print('rvm> successfully pinged '+leader_ip+' to become the leader!')
+            print('rvm> Successfully pinged '+leader_ip+' to become the leader!')
             return
-        print('rvm> failed pinging '+leader_ip+' to become the leader!')
+        print('rvm> Failed pinging '+leader_ip+' to become the leader!')
 
 
 # Verify received ping from leader within <LEADER_PING_TIMEOUT_SECONDS>
@@ -262,7 +262,7 @@ def elect_leader_if_missing_ping():
 def rvm_leader_ping():
     try:
         reset_last_leader_ping_time()
-        print('rvm> pinged by leader!')
+        print('rvm> Pinged by leader!')
         return jsonify({}), 200
     except Exception as err_msg:
         return jsonify({'error': str(err_msg)}), 400
@@ -297,6 +297,7 @@ def replace_self_in_rvm_ip_list(public_ip, new_rvm_ip):
 
 # Update all RVMs with own IP as the new UVM IP
 def forward_new_uvm_ip_to_rvms(public_ip):
+    write_uvm_ip(public_ip)
     rips = rvm_ips()
     public_ip = urllib.parse.quote(public_ip)
     for rip in rips:
@@ -306,6 +307,7 @@ def forward_new_uvm_ip_to_rvms(public_ip):
 
 # Replace self with a new RVM, elect a new leader, and become the new UVM
 def become_uvm():
+    print('rvm> Becoming a UVM!')
     public_ip = get_public_ip()
     # 1. Spawn a new RVM to take the current RVM's place
     new_rvm_ip = get_new_rvm_ip()
@@ -317,8 +319,10 @@ def become_uvm():
     # 4. Forward own IP address to all RVMs to confirm UVM status
     forward_new_uvm_ip_to_rvms(public_ip)
     # 5. Elevate current VM to become a UVM instead of an RVM
-    os.system("python3 "+os.getcwd()+"/../uvm/server.py")
-    sys.exit(0)
+    print('rvm> Starting the UVM process: see output in "../uvm/logs.txt"')
+    os.system("python3 "+os.getcwd()+"/../uvm/server.py > logs.txt")
+    print('rvm> Terminating RVM: became a UVM! :)')
+    os._exit(0)
 
 
 # Verify received ping from UVM within <LEADER_PING_TIMEOUT_SECONDS>
