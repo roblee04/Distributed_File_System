@@ -336,13 +336,19 @@ def become_uvm():
     print('rvm> Starting command: '+command)
     launch_uvm_server(command)
     # 2. Replace self with the new RVM's IP in the IP address list
+    print('rvm> Leader (new UVM) is forwarding new RVM IP address list ...')
     replace_self_in_rvm_ip_list(public_ip,new_rvm_ip)
     # 3. Forward own IP address to all RVMs to confirm UVM status
+    print('rvm> Leader (new UVM) is forwarding itself as the UVM IP address ...')
     forward_new_uvm_ip_to_rvms(public_ip)
     # 4. Elect a new leader among the RVMs
+    print('rvm> Leader (new UVM) is electing a leader amoung the remaining RVMs ...')
     elect_leader()
     # 5. Terminate the current RVM
-    print('rvm> Terminating RVM: became a UVM! :)')
+    print('rvm> Leader (new UVM) is terminating: became a UVM! :)')
+    print('     >> Make sure to eventually lookup and kill the PID of the spawned UVM!')
+    print('        $ lsof -i :5001')
+    print('        $ kill <pid>')
     os._exit(0)
 
 
