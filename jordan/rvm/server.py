@@ -61,6 +61,9 @@ RVM_PING_CHECK_TIMEOUT_SECONDS = 0.5
 # How often the leader checks for its public IP upon the AWS site's failure
 RVM_PUBLIC_IP_GETTER_TIMEOUT = 0.25
 
+# How long we want to wait for <os.system> to exe prior killing this RVM
+LAUNCH_UVM_SYSTEM_TIMEOUT = 0.25
+
 
 ##############################################################################
 # FILE OPERATIONS
@@ -310,28 +313,35 @@ def forward_new_uvm_ip_to_rvms(public_ip):
 
 
 # Launch the UVM Server
-def launch_uvm_server():
-    os.system("python3 "+os.getcwd()+"/../uvm/server.py > logs.txt")
+def spawn_uvm_server_process(command: str):
+    os.system(command)
+
+
+def launch_uvm_server(command):
+    # <sleep> waits for the <system> call in the thread below to trigger
+    threading.Thread(target=spawn_uvm_server_process, args=(command,), daemon=True).start()
+    time.sleep(LAUNCH_UVM_SYSTEM_TIMEOUT)
 
 
 # Replace self with a new RVM, elect a new leader, and become the new UVM
 def become_uvm():
-    print('rvm> Becoming a UVM!')
+    # 0. Spawn a new RVM to take the current RVM's place
     public_ip = get_public_ip()
-    # 1. Spawn a new RVM to take the current RVM's place
     new_rvm_ip = get_new_rvm_ip()
-    # 2. Replace self with the new RVM's IP in the IP address list
     EXECUTING_RVM_DAEMONS = False
-    replace_self_in_rvm_ip_list(public_ip,new_rvm_ip)
-    # 3. Elect a new leader among the RVMs
-    elect_leader()
-    # 4. Forward own IP address to all RVMs to confirm UVM status
-    forward_new_uvm_ip_to_rvms(public_ip)
-    # 5. Elevate current VM to become a UVM instead of an RVM
+    # 1. Spawn UVM server to run on this Machine
+    command = "python3 "+os.getcwd()+"/../uvm/server.py > logs.txt 2> logs.txt"
+    print('rvm> Becoming a UVM!')
     print('rvm> Starting the UVM process: see output in "./logs.txt"')
-    print('rvm> Starting command: python3 '+os.getcwd()+'/../uvm/server.py > logs.txt')
-    threading.Thread(target=launch_uvm_server, daemon=True).start()
-    time.sleep(0.5) # wait for the <system> call in the thread above to trigger
+    print('rvm> Starting command: '+command)
+    launch_uvm_server(command)
+    # 2. Replace self with the new RVM's IP in the IP address list
+    replace_self_in_rvm_ip_list(public_ip,new_rvm_ip)
+    # 3. Forward own IP address to all RVMs to confirm UVM status
+    forward_new_uvm_ip_to_rvms(public_ip)
+    # 4. Elect a new leader among the RVMs
+    elect_leader()
+    # 5. Terminate the current RVM
     print('rvm> Terminating RVM: became a UVM! :)')
     os._exit(0)
 

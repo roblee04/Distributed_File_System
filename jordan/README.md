@@ -60,3 +60,11 @@ To interact with the UVM webserver, use: `http://<PUBLIC-IP-ADDRESS>:5001/<COMMA
 * The UVM will print out all available command paths on launch!
   - UVMs also forward all file commands to their associated RVMs.
 * Use `^C` (control-"C") to terminate the server.
+
+If an RVM replaces the UVM, once that RVM exits, remember to lookup 
+and `kill` the process that it spawned to become a UVM!
+* Example:
+  ```sh
+  lsof -i :5001 # yields UVM process information, including the Process ID (PID)
+  kill PID # insert PID from the printed info above to kill the spawned UVM
+  ```
