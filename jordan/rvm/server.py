@@ -177,7 +177,7 @@ def write_rvm_ips(rvm_ips_contents: str):
 # Listen for a ping from the RVM leader: elect a new leader upon death.
 # Track last time pinged by leader
 last_leader_ping_time_lock = threading.Lock()
-last_leader_ping_time = time.time() - LEADER_PING_TIMEOUT_SECONDS # force an election at start time
+last_leader_ping_time = time.time()
 
 
 def reset_last_leader_ping_time():
