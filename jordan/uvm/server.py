@@ -23,6 +23,16 @@ app = Flask(__name__)
 
 
 ##############################################################################
+# GET Request Helper (returns status code)
+def get_request(url: str) -> int:
+    try:
+        return requests.get(url).status_code
+    except Exception as err_msg:
+        print('uvm> Error requesting url "'+url+'": '+str(err_msg))
+        return 408
+
+
+##############################################################################
 # RVM File Command Forwarding URL Command Extractor
 RVM_IPS_FILENAME = '../ips/rvm.txt'
 
@@ -37,8 +47,7 @@ def forward_command(original_url):
     rips = rvm_ips()
     for rip in rips:
         rurl = get_forwarded_url(original_url,rip)
-        response = requests.get(rurl)
-        if response.status_code != 200:
+        if get_request(rurl) != 200:
             print('dfs> UVM-to-RVM Forwarding Error: couldn\'t GET '+rurl)
 
 

@@ -146,6 +146,16 @@ def exists(path: str):
 # RVM HEALTH MONITORING
 
 ##############################################################################
+# GET Request Helper (returns status code)
+def get_request(url: str) -> int:
+    try:
+        return requests.get(url).status_code
+    except Exception as err_msg:
+        print('rvm> Error requesting url "'+url+'": '+str(err_msg))
+        return 408
+
+
+##############################################################################
 # RVM Addresses Getter
 RVM_IPS_FILENAME = '../ips/rvm.txt'
 rvm_ips_file_lock = threading.Lock()
@@ -183,8 +193,7 @@ def time_since_last_leader_ping():
 
 # Ping an IP address and return if got a valid response
 def ping_ip(ip_address, command):
-    response = requests.get('http://'+ip_address+':5000/'+command)
-    return response.status_code == 200
+    return get_request('http://'+ip_address+':5000/'+command) == 200
 
 
 # Execute leader election protocol
