@@ -13,6 +13,8 @@
 
 import os
 import requests
+import threading
+import urllib.parse
 from flask import Flask, request, jsonify
 
 import fs
@@ -35,13 +37,23 @@ def get_request(url: str) -> int:
 ##############################################################################
 # RVM File Command Forwarding URL Command Extractor
 RVM_IPS_FILENAME = '../ips/rvm.txt'
+rvm_ips_file_lock = threading.Lock()
 
 def rvm_ips():
-    with open(RVM_IPS_FILENAME, 'r') as file:
-        return [line for line in [line.strip() for line in file.read().split('\n')] if len(line) > 0]
+    with rvm_ips_file_lock:
+        with open(RVM_IPS_FILENAME, 'r') as file:
+            return [line for line in [line.strip() for line in file.read().split('\n')] if len(line) > 0]
+
+
+def write_rvm_ips(rvm_ips_contents: str):
+    with rvm_ips_file_lock:
+        with open(RVM_IPS_FILENAME, 'w') as file:
+            file.write(rvm_ips_contents)
+
 
 def get_forwarded_url(original_url, rvm_ip):
     return 'http://'+rvm_ip+original_url[original_url.find(':5000'):]
+
 
 def forward_command(original_url):
     rips = rvm_ips()
@@ -50,6 +62,9 @@ def forward_command(original_url):
         if get_request(rurl) != 200:
             print('uvm> UVM-to-RVM Forwarding Error: couldn\'t GET '+rurl)
 
+
+##############################################################################
+# FILE OPERATIONS
 
 ##############################################################################
 # Read N bytes from a path
@@ -143,24 +158,38 @@ def exists(path: str):
 
 
 ##############################################################################
+# RVM HEALTH MONITORING
+
+##############################################################################
+# Update ../ips/rvm.txt
+@app.route('/uvm_update_rvm_ips/<ip_address_list>', methods=['GET'])
+def uvm_update_rvm_ips(ip_address_list: str):
+    try:
+        ip_address_list = urllib.parse.unquote(ip_address_list)
+        print('uvm> New RVM <ip_address_list>: '+ip_address_list)
+        write_rvm_ips(ip_address_list)
+        return jsonify({}), 200
+    except Exception as err_msg:
+        return jsonify({'error': str(err_msg)}), 400
+
+
+##############################################################################
 # Start the server
 if __name__ == '__main__':
-    # Don't even ask. Message always prints double otherwise lmao
-    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
-        print(
-        """
-        Welcome to Jordan, Rahul, and Robin's COEN 317 Project!
-        Flask will communicate this server's "http" address!
-        Communicate to our server by executing GET requests to the following routes:
-            /read/<path>
-            /write/<path>/<data>
-            /append/<path>/<data>
-            /delete/<path>
-            /copy/<src_path>/<dest_path>
-            /rename/<old_path>/<new_path>
-            /exists/<path>
+    print(
+    """
+    Welcome to Jordan, Rahul, and Robin's COEN 317 Project!
+    Flask will communicate this server's "http" address!
+    Communicate to our server by executing GET requests to the following routes:
+        /read/<path>
+        /write/<path>/<data>
+        /append/<path>/<data>
+        /delete/<path>
+        /copy/<src_path>/<dest_path>
+        /rename/<old_path>/<new_path>
+        /exists/<path>
 
-        Happy coding! :)
-        """
-        )
+    Happy coding! :)
+    """
+    )
     app.run(host='0.0.0.0', debug=True, use_reloader=False)

@@ -174,6 +174,24 @@ def write_rvm_ips(rvm_ips_contents: str):
 
 
 ##############################################################################
+# UVM Address Getter
+UVM_IPS_FILENAME = '../ips/uvm.txt'
+uvm_ips_file_lock = threading.Lock()
+
+
+def uvm_ip():
+    with uvm_ips_file_lock:
+        with open(UVM_IPS_FILENAME, 'r') as file:
+            return file.read().strip()
+
+
+def write_uvm_ip(uvm_ip_contents: str):
+    with uvm_ips_file_lock:
+        with open(UVM_IPS_FILENAME, 'w') as file:
+            file.write(uvm_ip_contents)
+
+
+##############################################################################
 # Listen for a ping from the RVM leader: elect a new leader upon death.
 # Track last time pinged by leader
 last_leader_ping_time_lock = threading.Lock()
@@ -255,14 +273,17 @@ def get_new_rvm_ips(total_new_rvms):
     return [x for x in [get_new_rvm_ip() for _ in range(total_new_rvms)] if x != None]
 
 
-# Forward the new RVM IP address list to each RVM
-def forward_new_rvm_ips(new_ips):
-    print('rvm> Leader is forwarding new IP address list to RVMs ...')
-    ip_address_list = urllib.parse.quote('\n'.join(new_ips))
-    for ip in new_ips:
-        if not ping_ip(ip,'rvm_update_rvm_ips/'+ip_address_list):
-            print("rvm> Error trying to forward new IP address list to RVM "+ip)
-    print('rvm> Leader finished forwarding the new IP address list!')
+# Forward the new RVM IP address list to the UVM and each RVM
+def forward_new_rvm_ips(new_rvm_ips):
+    print('rvm> Leader is forwarding new RVM IP addresses list ...')
+    ip_address_list = urllib.parse.quote('\n'.join(new_rvm_ips))
+    for rip in new_rvm_ips:
+        if not ping_ip(rip,'rvm_update_rvm_ips/'+ip_address_list):
+            print("rvm> Error trying to forward new RVM IP address list to RVM "+rip)
+    uip = uvm_ip()
+    if not ping_ip(uip,'uvm_update_rvm_ips/'+ip_address_list):
+        print("rvm> Error trying to forward new RVM IP address list to UVM "+uip)
+    print('rvm> Leader finished forwarding the new RVM IP addresses list!')
 
 
 # Replace dead RVMs as needed
@@ -273,6 +294,7 @@ def replace_rvms_if_missing_ping():
         if len(dead_ips) != 0:
             print('rvm> Leader found dead RVM IPs: '+', '.join(dead_ips))
             live_ips = [ip for ip in rips if ip not in dead_ips]
+
             forward_new_rvm_ips(live_ips + get_new_rvm_ips(len(dead_ips)))
         else:
             print('rvm> Leader confirmed all RVM IPs are active!')
@@ -301,12 +323,12 @@ def rvm_become_leader():
 
 
 ##############################################################################
-# Rename <old_path> as <new_path>
+# Update ../ips/rvm.txt
 @app.route('/rvm_update_rvm_ips/<ip_address_list>', methods=['GET'])
 def rvm_update_rvm_ips(ip_address_list: str):
     try:
         ip_address_list = urllib.parse.unquote(ip_address_list)
-        print('rvm> NEW <ip_address_list>: '+ip_address_list)
+        print('rvm> New RVM <ip_address_list>: '+ip_address_list)
         write_rvm_ips(ip_address_list)
         return jsonify({}), 200
     except Exception as err_msg:
@@ -316,23 +338,21 @@ def rvm_update_rvm_ips(ip_address_list: str):
 ##############################################################################
 # Start the server
 if __name__ == '__main__':
-    # Don't even ask. Message always prints double otherwise lmao
-    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
-        print(
-        """
-        Welcome to Jordan, Rahul, and Robin's COEN 317 Project!
-        Flask will communicate this server's "http" address!
-        Communicate to our server by executing GET requests to the following routes:
-            /read/<path>
-            /write/<path>/<data>
-            /append/<path>/<data>
-            /delete/<path>
-            /copy/<src_path>/<dest_path>
-            /rename/<old_path>/<new_path>
-            /exists/<path>
+    print(
+    """
+    Welcome to Jordan, Rahul, and Robin's COEN 317 Project!
+    Flask will communicate this server's "http" address!
+    Communicate to our server by executing GET requests to the following routes:
+        /read/<path>
+        /write/<path>/<data>
+        /append/<path>/<data>
+        /delete/<path>
+        /copy/<src_path>/<dest_path>
+        /rename/<old_path>/<new_path>
+        /exists/<path>
 
-        Happy coding! :)
-        """
-        )
+    Happy coding! :)
+    """
+    )
     threading.Thread(target=elect_leader_if_missing_ping, daemon=True).start()
     app.run(host='0.0.0.0', debug=True, use_reloader=False)
