@@ -49,10 +49,10 @@ app = Flask(__name__)
 LEADER_PING_TIMEOUT_SECONDS = 5
 
 # How often we check for a leader ping
-LEADER_PING_CHECK_TIMEOUT_SECONDS = 1
+LEADER_PING_CHECK_TIMEOUT_SECONDS = 0.5
 
 # How often we check for an RVM ping
-RVM_PING_CHECK_TIMEOUT_SECONDS = 5
+RVM_PING_CHECK_TIMEOUT_SECONDS = 0.5
 
 
 ##############################################################################
@@ -214,7 +214,9 @@ def elect_leader():
 # Verify received ping from leader within <LEADER_PING_TIMEOUT_SECONDS>
 def elect_leader_if_missing_ping():
     while True:
-        if time_since_last_leader_ping() >= LEADER_PING_TIMEOUT_SECONDS:
+        time_elapsed = time_since_last_leader_ping()
+        if time_elapsed >= LEADER_PING_TIMEOUT_SECONDS:
+            print('Time between pings '+str(time_elapsed)+'s passsed threshold '+str(LEADER_PING_TIMEOUT_SECONDS)+'s!')
             elect_leader()
             reset_last_leader_ping_time()
         time.sleep(LEADER_PING_CHECK_TIMEOUT_SECONDS)
@@ -255,12 +257,12 @@ def get_new_rvm_ips(total_new_rvms):
 
 # Forward the new RVM IP address list to each RVM
 def forward_new_rvm_ips(new_ips):
-    print('rvm> leader is forwarding new IP address list to RVMs ...')
+    print('rvm> Leader is forwarding new IP address list to RVMs ...')
     ip_address_list = urllib.parse.quote('\n'.join(new_ips))
     for ip in new_ips:
         if not ping_ip(ip,'rvm_update_rvm_ips/'+ip_address_list):
             print("rvm> Error trying to forward new IP address list to RVM "+ip)
-    print('rvm> leader finished forwarding the new IP address list!')
+    print('rvm> Leader finished forwarding the new IP address list!')
 
 
 # Replace dead RVMs as needed
@@ -269,8 +271,11 @@ def replace_rvms_if_missing_ping():
         rips = rvm_ips()
         dead_ips = get_dead_rvm_ips(rips)
         if len(dead_ips) != 0:
+            print('rvm> Leader found dead RVM IPs: '+', '.join(dead_ips))
             live_ips = [ip for ip in rips if ip not in dead_ips]
             forward_new_rvm_ips(live_ips + get_new_rvm_ips(len(dead_ips)))
+        else:
+            print('rvm> Leader confirmed all RVM IPs are active!')
         time.sleep(RVM_PING_CHECK_TIMEOUT_SECONDS)
 
 
@@ -300,7 +305,9 @@ def rvm_become_leader():
 @app.route('/rvm_update_rvm_ips/<ip_address_list>', methods=['GET'])
 def rvm_update_rvm_ips(ip_address_list: str):
     try:
-        write_rvm_ips(urllib.parse.unquote(ip_address_list))
+        ip_address_list = urllib.parse.unquote(ip_address_list)
+        print('rvm> NEW <ip_address_list>: '+ip_address_list)
+        write_rvm_ips(ip_address_list)
         return jsonify({}), 200
     except Exception as err_msg:
         return jsonify({'error': str(err_msg)}), 400
