@@ -49,7 +49,7 @@ app = Flask(__name__)
 LEADER_PING_TIMEOUT_SECONDS = 5
 
 # How often we check for a leader ping
-LEADER_PING_CHECK_TIMEOUT_SECONDS = 0.25
+LEADER_PING_CHECK_TIMEOUT_SECONDS = 1
 
 # How often we check for an RVM ping
 RVM_PING_CHECK_TIMEOUT_SECONDS = 5
@@ -255,8 +255,8 @@ def forward_new_rvm_ips(new_ips):
 
 # Replace dead RVMs as needed
 def replace_rvms_if_missing_ping():
-    rips = rvm_ips()
     while True:
+        rips = rvm_ips()
         dead_ips = get_dead_rvm_ips(rips)
         if len(dead_ips) != 0:
             live_ips = [ip for ip in rips if ip not in dead_ips]
