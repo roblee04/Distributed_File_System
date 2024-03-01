@@ -294,7 +294,6 @@ def replace_rvms_if_missing_ping():
         if len(dead_ips) != 0:
             print('rvm> Leader found dead RVM IPs: '+', '.join(dead_ips))
             live_ips = [ip for ip in rips if ip not in dead_ips]
-
             forward_new_rvm_ips(live_ips + get_new_rvm_ips(len(dead_ips)))
         else:
             print('rvm> Leader confirmed all RVM IPs are active!')
