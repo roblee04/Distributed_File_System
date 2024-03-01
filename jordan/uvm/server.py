@@ -158,7 +158,7 @@ def exists(path: str):
 
 
 ##############################################################################
-# RVM HEALTH MONITORING
+# UVM HEALTH MONITORING
 
 ##############################################################################
 # Update ../ips/rvm.txt
@@ -168,6 +168,17 @@ def uvm_update_rvm_ips(ip_address_list: str):
         ip_address_list = urllib.parse.unquote(ip_address_list)
         print('uvm> New RVM <ip_address_list>: '+ip_address_list.strip().replace('\n',', '))
         write_rvm_ips(ip_address_list)
+        return jsonify({}), 200
+    except Exception as err_msg:
+        return jsonify({'error': str(err_msg)}), 400
+
+
+##############################################################################
+# Listen for an RVM leader ping
+@app.route('/uvm_leader_ping', methods=['GET'])
+def uvm_leader_ping():
+    try:
+        print('uvm> pinged by leader!')
         return jsonify({}), 200
     except Exception as err_msg:
         return jsonify({'error': str(err_msg)}), 400

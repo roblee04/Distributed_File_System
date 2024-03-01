@@ -48,6 +48,9 @@ app = Flask(__name__)
 # How long a leader has to ping - @important INCREASE THIS IF YOU NEED MORE TIME TO BOOT RVM SERVERS UP!
 LEADER_PING_TIMEOUT_SECONDS = 3
 
+# How often we ping the UVM
+UVM_PING_TIMEOUT_SECONDS = 0.5
+
 # How often we check for a leader ping
 LEADER_PING_CHECK_TIMEOUT_SECONDS = 0.5
 
@@ -234,7 +237,7 @@ def elect_leader_if_missing_ping():
     while True:
         time_elapsed = time_since_last_leader_ping()
         if time_elapsed >= LEADER_PING_TIMEOUT_SECONDS:
-            print('rvm> Time between pings '+str(time_elapsed)+'s passsed threshold '+str(LEADER_PING_TIMEOUT_SECONDS)+'s!')
+            print('rvm> Time between leader pings '+str(time_elapsed)+'s exceeded '+str(LEADER_PING_TIMEOUT_SECONDS)+'s!')
             elect_leader()
             reset_last_leader_ping_time()
         time.sleep(LEADER_PING_CHECK_TIMEOUT_SECONDS)
@@ -249,6 +252,30 @@ def rvm_leader_ping():
         return jsonify({}), 200
     except Exception as err_msg:
         return jsonify({'error': str(err_msg)}), 400
+
+
+##############################################################################
+# Leader pings for UVM health: become the new UVM upon death.
+def become_uvm():
+    # @TODO: 
+    # 1. SPAWN A NEW RVM TO TAKE THE CURRENT RVM'S PLACE
+    # 2. REMOVE SELF FROM THE RVM IP ADDRESS LIST
+    # 3. START THE RVM LEADERSHIP ELECTION PROTOCOL
+    # 4. ELEVATE CURRENT VM TO BECOME THE NEW UVM INSTEAD OF AN RVM
+    # 5. FORWARD OWN IP ADDRESS TO ALL RVMS TO CONFIRM LEADERSHIP
+
+
+
+# Verify received ping from UVM within <LEADER_PING_TIMEOUT_SECONDS>
+def become_uvm_if_missing_ping():
+    while True:
+        uip = uvm_ip()
+        if not ping_ip(uip,'/uvm_leader_ping'):
+            print('rvm> Failed to reach UVM (will replace with self): '+uip)
+            become_uvm()
+        else:
+            print('rvm> Confirmed UVM is alive!')
+        time.sleep(UVM_PING_TIMEOUT_SECONDS)
 
 
 ##############################################################################
@@ -315,6 +342,7 @@ def rvm_become_leader():
             if leader_pinging_rvms:
                 return jsonify({}), 200
             leader_pinging_rvms = True
+        threading.Thread(target=become_uvm_if_missing_ping, daemon=True).start()
         threading.Thread(target=replace_rvms_if_missing_ping, daemon=True).start()
         return jsonify({}), 200
     except Exception as err_msg:
