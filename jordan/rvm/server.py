@@ -34,6 +34,7 @@
 
 import os
 import requests
+import sys
 import threading
 import time
 import urllib.parse
@@ -56,6 +57,9 @@ LEADER_PING_CHECK_TIMEOUT_SECONDS = 0.5
 
 # How often we check for an RVM ping
 RVM_PING_CHECK_TIMEOUT_SECONDS = 0.5
+
+# How often the leader checks for its public IP upon the AWS site's failure
+RVM_PUBLIC_IP_GETTER_TIMEOUT = 0.25
 
 
 ##############################################################################
@@ -149,6 +153,12 @@ def exists(path: str):
 # RVM HEALTH MONITORING
 
 ##############################################################################
+# Get a new IP address for an EC2 RVM
+def get_new_rvm_ip():
+    return None
+
+
+##############################################################################
 # GET Request Helper (returns status code)
 def get_request(url: str) -> int:
     try:
@@ -196,6 +206,10 @@ def write_uvm_ip(uvm_ip_contents: str):
 
 ##############################################################################
 # Listen for a ping from the RVM leader: elect a new leader upon death.
+# Track whether should continue RVM daemons (stops when becoming a UVM)
+EXECUTING_RVM_DAEMONS = True
+
+
 # Track last time pinged by leader
 last_leader_ping_time_lock = threading.Lock()
 last_leader_ping_time = time.time()
@@ -234,7 +248,7 @@ def elect_leader():
 
 # Verify received ping from leader within <LEADER_PING_TIMEOUT_SECONDS>
 def elect_leader_if_missing_ping():
-    while True:
+    while EXECUTING_RVM_DAEMONS:
         time_elapsed = time_since_last_leader_ping()
         if time_elapsed >= LEADER_PING_TIMEOUT_SECONDS:
             print('rvm> Time between leader pings '+str(time_elapsed)+'s exceeded '+str(LEADER_PING_TIMEOUT_SECONDS)+'s!')
@@ -256,14 +270,55 @@ def rvm_leader_ping():
 
 ##############################################################################
 # Leader pings for UVM health: become the new UVM upon death.
-def become_uvm():
-    # @TODO: 
-    # 1. SPAWN A NEW RVM TO TAKE THE CURRENT RVM'S PLACE
-    # 2. REMOVE SELF FROM THE RVM IP ADDRESS LIST
-    # 3. START THE RVM LEADERSHIP ELECTION PROTOCOL
-    # 4. ELEVATE CURRENT VM TO BECOME THE NEW UVM INSTEAD OF AN RVM
-    # 5. FORWARD OWN IP ADDRESS TO ALL RVMS TO CONFIRM LEADERSHIP
+# Get our public IP address from <http://checkip.amazonaws.com>
+def get_public_ip():
+    while True:
+        try:
+            response = requests.get('http://checkip.amazonaws.com')
+            response.raise_for_status()
+            public_ip = response.text.strip()
+            print('rvm> Leader got its own public IP: '+public_ip)
+            return public_ip
+        except Exception as err_msg:
+            print("rvm> Error fetching leader's public IP address: "+str(err_msg))
+        time.sleep(RVM_PUBLIC_IP_GETTER_TIMEOUT)
 
+
+# Remove own IP from ../ips/rvm.txt, and forward the new list to all other RVMs
+def replace_self_in_rvm_ip_list(public_ip, new_rvm_ip):
+    rips = rvm_ips()
+    new_rvm_ips = [ip for ip in rips if ip != public_ip]
+    if new_rvm_ip != None:
+        new_rvm_ips.append(new_rvm_ip)
+    rvm_txt = '\n'.join(new_rvm_ips)
+    write_rvm_ips(rvm_txt)
+    forward_new_rvm_ips_to_rvms(new_rvm_ips,urllib.parse.quote(rvm_txt))
+
+
+# Update all RVMs with own IP as the new UVM IP
+def forward_new_uvm_ip_to_rvms(public_ip):
+    rips = rvm_ips()
+    public_ip = urllib.parse.quote(public_ip)
+    for rip in rips:
+        if not ping_ip(rip,'rvm_update_uvm_ip/'+public_ip):
+            print("rvm> Error trying to forward new UVM IP address to RVM "+rip)
+
+
+# Replace self with a new RVM, elect a new leader, and become the new UVM
+def become_uvm():
+    public_ip = get_public_ip()
+    # 1. Spawn a new RVM to take the current RVM's place
+    new_rvm_ip = get_new_rvm_ip()
+    # 2. Replace self with the new RVM's IP in the IP address list
+    EXECUTING_RVM_DAEMONS = False
+    replace_self_in_rvm_ip_list(public_ip,new_rvm_ip)
+    # 3. Elect a new leader among the RVMs
+    elect_leader()
+    # 4. Forward own IP address to all RVMs to confirm UVM status
+    forward_new_uvm_ip_to_rvms(public_ip)
+    # 5. Elevate current VM to become a UVM instead of an RVM
+    os.system("python3 "+os.getcwd()+"/../uvm/server.py")
+    sys.exit(0)
 
 
 # Verify received ping from UVM within <LEADER_PING_TIMEOUT_SECONDS>
@@ -280,11 +335,6 @@ def become_uvm_if_missing_ping():
 
 ##############################################################################
 # Listen for request to become the RVM leader
-# Get a new IP address for an EC2 RVM
-def get_new_rvm_ip():
-    return None
-
-
 # Get list of dead RVM IP addresses
 def get_dead_rvm_ips(rips):
     dead_ips = []
@@ -301,21 +351,28 @@ def get_new_rvm_ips(total_new_rvms):
 
 
 # Forward the new RVM IP address list to the UVM and each RVM
-def forward_new_rvm_ips(new_rvm_ips):
-    print('rvm> Leader is forwarding new RVM IP addresses list ...')
-    ip_address_list = urllib.parse.quote('\n'.join(new_rvm_ips))
+def forward_new_rvm_ips_to_rvms(new_rvm_ips, ip_address_list):
     for rip in new_rvm_ips:
         if not ping_ip(rip,'rvm_update_rvm_ips/'+ip_address_list):
             print("rvm> Error trying to forward new RVM IP address list to RVM "+rip)
-    uip = uvm_ip()
-    if not ping_ip(uip,'uvm_update_rvm_ips/'+ip_address_list):
-        print("rvm> Error trying to forward new RVM IP address list to UVM "+uip)
+
+
+def forward_new_rvm_ips_to_uvm(uvm_ip, ip_address_list):
+    if not ping_ip(uvm_ip,'uvm_update_rvm_ips/'+ip_address_list):
+        print("rvm> Error trying to forward new RVM IP address list to UVM "+uvm_ip)
+
+
+def forward_new_rvm_ips(new_rvm_ips):
+    print('rvm> Leader is forwarding new RVM IP addresses list ...')
+    ip_address_list = urllib.parse.quote('\n'.join(new_rvm_ips))
+    forward_new_rvm_ips_to_rvms(new_rvm_ips,ip_address_list)
+    forward_new_rvm_ips_to_uvm(uvm_ip(),ip_address_list)
     print('rvm> Leader finished forwarding the new RVM IP addresses list!')
 
 
 # Replace dead RVMs as needed
 def replace_rvms_if_missing_ping():
-    while True:
+    while EXECUTING_RVM_DAEMONS:
         rips = rvm_ips()
         dead_ips = get_dead_rvm_ips(rips)
         if len(dead_ips) != 0:
@@ -357,6 +414,19 @@ def rvm_update_rvm_ips(ip_address_list: str):
         ip_address_list = urllib.parse.unquote(ip_address_list)
         print('rvm> New RVM <ip_address_list>: '+ip_address_list.strip().replace('\n',', '))
         write_rvm_ips(ip_address_list)
+        return jsonify({}), 200
+    except Exception as err_msg:
+        return jsonify({'error': str(err_msg)}), 400
+
+
+##############################################################################
+# Update ../ips/uvm.txt
+@app.route('/rvm_update_uvm_ip/<ip>', methods=['GET'])
+def rvm_update_uvm_ip(ip: str):
+    try:
+        ip = urllib.parse.unquote(ip)
+        print('rvm> New UVM <ip>: '+ip.strip())
+        write_uvm_ip(ip)
         return jsonify({}), 200
     except Exception as err_msg:
         return jsonify({'error': str(err_msg)}), 400
