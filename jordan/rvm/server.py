@@ -319,7 +319,8 @@ def become_uvm():
     # 4. Forward own IP address to all RVMs to confirm UVM status
     forward_new_uvm_ip_to_rvms(public_ip)
     # 5. Elevate current VM to become a UVM instead of an RVM
-    print('rvm> Starting the UVM process: see output in "../uvm/logs.txt"')
+    print('rvm> Starting the UVM process: see output in "./logs.txt"')
+    print('rvm> Starting command: python3 '+os.getcwd()+'/../uvm/server.py > logs.txt')
     os.system("python3 "+os.getcwd()+"/../uvm/server.py > logs.txt")
     print('rvm> Terminating RVM: became a UVM! :)')
     os._exit(0)
