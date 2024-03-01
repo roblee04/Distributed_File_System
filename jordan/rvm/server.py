@@ -245,6 +245,7 @@ def get_dead_rvm_ips(rips):
         if not ping_ip(rip,'rvm_leader_ping'):
             print('rvm> Leader failed to reach dead RVM (will replace it): '+rip)
             dead_ips.append(rip)
+    return dead_ips
 
 
 # Get list of replacement RVM IP addresses
