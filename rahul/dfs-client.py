@@ -1,6 +1,6 @@
 import requests
 
-BASE_URL = "http://127.0.0.1:5000"  # Replace with your Flask server address
+BASE_URL = "http://127.0.0.1:5000" 
 
 def make_request(endpoint, method='GET', data=None):
     url = f"{BASE_URL}/{endpoint}"
