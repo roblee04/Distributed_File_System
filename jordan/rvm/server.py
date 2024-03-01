@@ -45,7 +45,7 @@ import fs
 # App Creation + Invariables
 app = Flask(__name__)
 
-# How long a leader has to ping
+# How long a leader has to ping - @important INCREASE THIS IF YOU NEED MORE TIME TO BOOT RVM SERVERS UP!
 LEADER_PING_TIMEOUT_SECONDS = 3
 
 # How often we check for a leader ping
