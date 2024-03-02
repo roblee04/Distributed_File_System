@@ -221,13 +221,14 @@ def ping_rvm(ip_address, command):
 # => This RVM will automatically elect itself as the leader, then re-spawn all
 #    of the other missing RVMs!
 def spawn_seed_rvm():
+    print('uvm> All RVMs are dead!')
     seed_ip = get_new_rvm_ip()
-    print('uvm> All RVMs are dead! Spawning an RVM ('+seed_ip+') to seed the network')
+    if seed_ip == None:
+        print("uvm> Can't allocate any more RVMs to recover the backup network!")
+        return
+    print('uvm> Spawning an RVM ('+seed_ip+') to seed the network!')
     rips = rvm_ips()
-    new_ips = rips[1:]
-    if seed_ip != None:
-        new_ips.append(seed_ip)
-    ip_address_list = '\n'.join(new_ips)
+    ip_address_list = '\n'.join([seed_ip] + rips[1:])
     write_rvm_ips(ip_address_list)
     ip_address_list = urllib.parse.quote(ip_address_list)
     while not ping_rvm(seed_ip,'rvm_update_rvm_ips/'+ip_address_list):
