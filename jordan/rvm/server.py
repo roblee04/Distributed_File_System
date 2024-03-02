@@ -43,7 +43,7 @@ from flask import Flask, request, jsonify
 import fs
 
 ##############################################################################
-# App Creation + Invariables
+# App Creation + Invariants
 app = Flask(__name__)
 
 # How long a leader has to ping - @important INCREASE THIS IF YOU NEED MORE TIME TO BOOT RVM SERVERS UP!
@@ -329,7 +329,7 @@ def become_uvm():
     public_ip = get_public_ip()
     new_rvm_ip = get_new_rvm_ip()
     EXECUTING_RVM_DAEMONS = False
-    # 1. Spawn UVM server to run on this Machine
+    # 1. Spawn UVM server to run on this machine
     command = "python3 "+os.getcwd()+"/../uvm/server.py > logs.txt 2> logs.txt"
     print('rvm> Becoming a UVM!')
     print('rvm> Starting the UVM process: see output in "./logs.txt"')
@@ -349,7 +349,7 @@ def become_uvm():
     print('     >> Make sure to eventually lookup and kill the PID of the spawned UVM!')
     print('        $ lsof -i :5001')
     print('        $ kill <pid>')
-    os._exit(0)
+    os._exit(0) # required to properly end the flask server (smh)
 
 
 # Verify received ping from UVM within <LEADER_PING_TIMEOUT_SECONDS>
@@ -458,6 +458,17 @@ def rvm_update_uvm_ip(ip: str):
         ip = urllib.parse.unquote(ip)
         print('rvm> New UVM <ip>: '+ip.strip())
         write_uvm_ip(ip)
+        return jsonify({}), 200
+    except Exception as err_msg:
+        return jsonify({'error': str(err_msg)}), 400
+
+
+##############################################################################
+# Confirm to UVM whether alive
+@app.route('/rvm_uvm_ping', methods=['GET'])
+def rvm_uvm_ping():
+    try:
+        print('rvm> Pinged by UVM!')
         return jsonify({}), 200
     except Exception as err_msg:
         return jsonify({'error': str(err_msg)}), 400

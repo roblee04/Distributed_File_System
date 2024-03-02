@@ -2,6 +2,19 @@
 # Purpose:
 #   UVM server functionality to listen to client file operation requests.
 
+
+
+
+
+##############################################################################
+# @TODO: REPLACE <get_new_rvm_ip> BODY WITH PROPER HTTP CALL TO CENTRAL ROUTER
+##############################################################################
+
+
+
+
+
+
 # SUPPORTED FILE APIs:
 #   1. read a file
 #   2. write data (also creates files)
@@ -14,14 +27,27 @@
 import os
 import requests
 import threading
+import time
 import urllib.parse
 from flask import Flask, request, jsonify
 
 import fs
 
 ##############################################################################
-# App Creation
+# App Creation + Invariants
 app = Flask(__name__)
+
+# How long we wait between checks as to whether every RVM has died
+RVM_HEALTH_PING_TIMEOUT = 3
+
+# How long we wait between attempts to send the new RVM IP address list to a seeded RVM
+RVM_SEED_IP_ADDRESS_LIST_PING_TIMEOUT = 0.25
+
+
+##############################################################################
+# Get a new IP address for an EC2 RVM
+def get_new_rvm_ip():
+    return None
 
 
 ##############################################################################
@@ -185,6 +211,44 @@ def uvm_leader_ping():
 
 
 ##############################################################################
+# Listen to make sure there's at least one RVM available
+# Ping an RVM IP address and return if got a valid response
+def ping_rvm(ip_address, command):
+    return get_request('http://'+ip_address+':5000/'+command) == 200
+
+
+# Spawn and integrate a new RVM into the system
+# => This RVM will automatically elect itself as the leader, then re-spawn all
+#    of the other missing RVMs!
+def spawn_seed_rvm():
+    seed_ip = get_new_rvm_ip()
+    print('uvm> All RVMs are dead! Spawning an RVM ('+seed_ip+') to seed the network')
+    rips = rvm_ips()
+    new_ips = rips[1:]
+    if seed_ip != None:
+        new_ips.append(seed_ip)
+    ip_address_list = '\n'.join(new_ips)
+    write_rvm_ips(ip_address_list)
+    ip_address_list = urllib.parse.quote(ip_address_list)
+    while not ping_rvm(seed_ip,'rvm_update_rvm_ips/'+ip_address_list):
+        time.sleep(RVM_SEED_IP_ADDRESS_LIST_PING_TIMEOUT)
+
+
+# Continuously verify that we have at least 1 RVM alive in the system
+def keep_rvms_alive():
+    while True:
+        rips = rvm_ips()
+        failed_count = 0
+        for rip in rips:
+            if not ping_rvm(rip,'rvm_uvm_ping'):
+                print('uvm> Failed to reach RVM: '+rip)
+                failed_count += 1
+        if failed_count == len(rips):
+            spawn_seed_rvm()
+        time.sleep(RVM_HEALTH_PING_TIMEOUT)
+
+
+##############################################################################
 # Start the server
 if __name__ == '__main__':
     print(
@@ -203,4 +267,5 @@ if __name__ == '__main__':
     Happy coding! :)
     """
     )
+    threading.Thread(target=keep_rvms_alive, daemon=True).start()
     app.run(host='0.0.0.0', port=5001, debug=True, use_reloader=False)
