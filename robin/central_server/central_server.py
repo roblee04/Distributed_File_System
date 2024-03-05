@@ -5,9 +5,7 @@
 
 
 # ############################################################################
-# @TODO: Who initializes the ring? the server or nodes?
-# @TODO: Pool of VMs. In case of failure, allow UVMs to request for another VM (IP addr)
-#        May or may not need concurrency control.
+# @TODO: 
 # ############################################################################
 
 # SUPPORTED ROUTES:
@@ -23,6 +21,7 @@ import os
 from flask import Flask, request, jsonify
 import requests
 from threading import Lock
+import urllib.parse
 ##############################################################################
 # App Creation
 app = Flask(__name__)
@@ -38,35 +37,39 @@ def machine_pool(file_name):
             pool.append(ip.strip())
     return pool
 
+IP_ROOT = "../../jordan/ips/"
+
 # thread safe global variables
 POOL_IPS_FILENAME = 'pool-ips.txt'
 vm_pool_lock = Lock()
 vm_pool = machine_pool(POOL_IPS_FILENAME)
 
 
-UVM_IPS_FILENAME = 'uvm-ips.txt'
-node_lock = L##############################################################################
-# Append a string to the path (creates a new file if <path> DNE)
-@app.route('/append/<path>/<data>', methods=['GET'])
-def append(path: str, data: str):
-    try:
-        # find route, and send request to node
-        node_ip = route(path)
-        url = f"{node_ip}/append/{path}/{data}"
-        response = requests.get(url)
-        # when the node responds back, forward reponse back to client
-        if response.status_code == 200:
-            return jsonify({}), 200
-        else:
-            raise Exception("Error Code " + response.status_code)
+def init_uvms(root_dir):
+    uvm_contents = []  # Initialize an empty list to hold contents of uvm.txt files
 
-    except Exception as err_msg:
-        return jsonify({'error': err_msg.args[0]}), 400
+    # Get the list of subdirectories in ROOT
+    subdirectories = [d for d in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, d))]
 
-ock()
-nodes = machine_pool(UVM_IPS_FILENAME)
+    for subdir in subdirectories:
+        # Construct the path to the uvm.txt file in the current subdirectory
+        uvm_file_path = os.path.join(root_dir, subdir, 'uvm.txt')
 
-print(vm_pool, nodes)
+        # Check if the uvm.txt file exists in this subdirectory
+        if os.path.isfile(uvm_file_path):
+            try:
+                with open(uvm_file_path, 'r') as file:  # Open the file for reading
+                    contents = file.readlines()  # Read all lines in the file
+                    uvm_contents.extend(contents)  # Add contents to the list
+            except IOError as e:
+                print(f"Error opening or reading file {uvm_file_path}: {e}")
+
+    return uvm_contents
+
+# thread safe global variables, nodes are UVMS!
+node_lock = Lock()
+nodes = init_uvms(IP_ROOT)
+
 
 def request_replica():
     with vm_pool_lock:
@@ -77,7 +80,6 @@ def request_replica():
 
 
 def replace_uvm(old_uvm, new_uvm):
-    print(nodes)
     if old_uvm in nodes:
         with node_lock:
             idx = nodes.index(old_uvm)
@@ -221,6 +223,17 @@ def exists(path: str):
 def get_machine():
     return request_replica()
 
+
+##############################################################################
+# update global uvms / nodes variable
+@app.route('/router_update_uvm_ip/<old>/<new>', methods=['GET'])
+def update_uvm():
+    old = urllib.parse.unquote(old)
+    new = urllib.parse.unquote(new)
+    nodes = replace_uvm(old, new)
+    return jsonify({}), 200
+
+    
 ##############################################################################
 # Start the server
 if __name__ == '__main__':
