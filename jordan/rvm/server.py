@@ -338,7 +338,7 @@ def become_uvm():
     new_rvm_ip = get_new_rvm_ip()
     EXECUTING_RVM_DAEMONS = False
     # 1. Spawn UVM server to run on this machine
-    command = "python3 "+os.getcwd()+"/../uvm/server.py &> logs.txt"
+    command = "python3 "+os.getcwd()+"/../uvm/server.py "+sys.argv[1]+" &> logs.txt"
     print('rvm> Becoming a UVM!')
     print('rvm> Starting the UVM process: see output in "./logs.txt"')
     print('rvm> Starting command: '+command)
