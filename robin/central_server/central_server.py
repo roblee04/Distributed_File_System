@@ -55,7 +55,7 @@ def request_replica():
         if len(vm_pool) >= 1:
             return vm_pool.pop(0)
         else:
-            raise Exception('error: VM pool is empty')
+            return None
 
 def replace_uvm(old_uvm, new_uvm):
     print(nodes)
@@ -218,12 +218,6 @@ def exists(path: str):
 @app.route('/getmachine', methods=['GET'])
 def get_machine():
     return request_replica()
-
-##############################################################################
-# find a new leader and replace current
-@app.route('/elect/<old_uvm_ip>/<new_uvm_ip>', methods=['GET'])
-def elect(old_uvm_ip: str, new_uvm_ip: str):
-    return replace_uvm(old_uvm_ip, new_uvm_ip)
 
 ##############################################################################
 # Start the server
