@@ -1,4 +1,5 @@
 import requests
+import urllib
 
 BASE_URL = "http://3.101.106.167:8002" 
 
@@ -11,18 +12,19 @@ def read_file(filename):
     endpoint = f"read/{filename}"
     response = make_request(endpoint)
     if response.status_code == 200:
-        return response.json()["data"]
+        return urllib.parse.unquote(response.json()["data"])
     else:
         return f"Failed to read file '{filename}': {response.text}"
 
 def write_file(filename, content):
-    endpoint = "write/{filename}/{content}"
+    content = urllib.parse.quote(content)
     # data = {"filename": filename, "content": content}
+    endpoint = "write/{filename}/{content}"
     response = make_request(endpoint, method='GET')
     if response.status_code == 200:
         return f"File '{filename}' written successfully"
     else:
-        return f"Failed to write to file '{filename}': {response.text}"
+        return f"Failed to write to file '{filename}'"
 
 def append_to_file(filename, content):
     endpoint = f"append/{filename}"
@@ -31,7 +33,7 @@ def append_to_file(filename, content):
     if response.status_code == 200:
         return f"Content appended to file '{filename}' successfully"
     else:
-        return f"Failed to append to file '{filename}': {response.text}"
+        return f"Failed to append to file '{filename}'"
 
 def delete_file(filename):
     endpoint = f"delete/{filename}"
@@ -39,7 +41,7 @@ def delete_file(filename):
     if response.status_code == 200:
         return f"File '{filename}' deleted successfully"
     else:
-        return f"Failed to delete file '{filename}': {response.text}"
+        return f"Failed to delete file '{filename}'"
 
 def copy_file(src_filename, dest_filename):
     endpoint = f"copy/{src_filename}/{dest_filename}"
@@ -47,7 +49,7 @@ def copy_file(src_filename, dest_filename):
     if response.status_code == 200:
         return f"File '{src_filename}' copied to '{dest_filename}' successfully"
     else:
-        return f"Failed to copy file '{src_filename}' to '{dest_filename}': {response.text}"
+        return f"Failed to copy file '{src_filename}' to '{dest_filename}'"
 
 def rename_file(old_filename, new_filename):
     endpoint = f"rename/{old_filename}/{new_filename}"
