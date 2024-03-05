@@ -19,11 +19,10 @@
 # SUPPORTED FILE APIs:
 #   1. read a file
 #   2. write data (also creates files)
-#   3. append data (also creates files)
-#   4. delete a file
-#   5. copy a file
-#   6. rename (also moves) a file
-#   7. check if a file exists
+#   3. delete a file
+#   4. copy a file
+#   5. rename (also moves) a file
+#   6. check if a file exists
 
 # SUPPORTED RVM-HEALTH APIs:
 #   1. Listen for leader pings
@@ -87,17 +86,6 @@ def read(path: str):
 def write(path: str, data: str):
     try:
         fs.write(path, data)
-        return jsonify({}), 200
-    except Exception as err_msg:
-        return jsonify({'error': str(err_msg)}), 400
-
-
-##############################################################################
-# Append a string to the path (creates a new file if <path> DNE)
-@app.route('/append/<path>/<data>', methods=['GET'])
-def append(path: str, data: str):
-    try:
-        fs.append(path, data)
         return jsonify({}), 200
     except Exception as err_msg:
         return jsonify({'error': str(err_msg)}), 400
@@ -484,7 +472,6 @@ if __name__ == '__main__':
     Communicate to our server by executing GET requests to the following routes:
         /read/<path>
         /write/<path>/<data>
-        /append/<path>/<data>
         /delete/<path>
         /copy/<src_path>/<dest_path>
         /rename/<old_path>/<new_path>
