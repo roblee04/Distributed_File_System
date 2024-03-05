@@ -53,9 +53,10 @@ print(vm_pool, nodes)
 def request_replica():
     with vm_pool_lock:
         if len(vm_pool) >= 1:
-            return vm_pool.pop(0)
+            return jsonify({'replica': vm_pool.pop(0)}), 200
         else:
-            return None
+            return jsonify({'replica': None}), 200
+
 
 def replace_uvm(old_uvm, new_uvm):
     print(nodes)
@@ -112,7 +113,6 @@ def read(path: str):
 @app.route('/write/<path>/<data>', methods=['GET'])
 def write(path: str, data: str):
     try:
-        print("hit")
         # find route, and send request to node
         node_ip = route(path)
         url = f"{node_ip}/write/{path}/{data}"
