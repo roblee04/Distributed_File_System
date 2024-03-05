@@ -46,7 +46,7 @@ import fs
 app = Flask(__name__)
 
 # Where the router lives - @important REPLACE WITH TRUE VALUE PRIOR DEPLOYMENT
-ROUTER_IP_ADDRESS = None
+ROUTER_IP_ADDRESS = '54.215.223.179'
 
 # How long a leader has to ping - @important INCREASE THIS IF YOU NEED MORE TIME TO BOOT RVM SERVERS UP!
 LEADER_PING_TIMEOUT_SECONDS = 3
