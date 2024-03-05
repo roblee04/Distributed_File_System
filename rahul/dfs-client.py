@@ -1,6 +1,6 @@
 import requests
 
-BASE_URL = "http://127.0.0.1:5000" 
+BASE_URL = "http://3.101.106.167:8002" 
 
 def make_request(endpoint, method='GET', data=None):
     url = f"{BASE_URL}/{endpoint}"
@@ -11,14 +11,14 @@ def read_file(filename):
     endpoint = f"read/{filename}"
     response = make_request(endpoint)
     if response.status_code == 200:
-        return response.json()["content"]
+        return response.json()["data"]
     else:
         return f"Failed to read file '{filename}': {response.text}"
 
 def write_file(filename, content):
-    endpoint = "write"
-    data = {"filename": filename, "content": content}
-    response = make_request(endpoint, method='POST', data=data)
+    endpoint = "write/{filename}/{content}"
+    # data = {"filename": filename, "content": content}
+    response = make_request(endpoint, method='GET')
     if response.status_code == 200:
         return f"File '{filename}' written successfully"
     else:
