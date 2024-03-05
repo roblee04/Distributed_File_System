@@ -173,7 +173,7 @@ def get_request(url: str) -> int:
 
 ##############################################################################
 # RVM Addresses Getter
-RVM_IPS_FILENAME = '../ips/rvm.txt'
+RVM_IPS_FILENAME = '../ips/'+sys.argv[1]+'/rvm.txt'
 rvm_ips_file_lock = threading.Lock()
 
 
@@ -191,7 +191,7 @@ def write_rvm_ips(rvm_ips_contents: str):
 
 ##############################################################################
 # UVM Address Getter
-UVM_IPS_FILENAME = '../ips/uvm.txt'
+UVM_IPS_FILENAME = '../ips/'+sys.argv[1]+'/uvm.txt'
 uvm_ips_file_lock = threading.Lock()
 
 
