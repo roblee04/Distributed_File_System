@@ -45,6 +45,9 @@ import fs
 # App Creation + Invariants
 app = Flask(__name__)
 
+# Where the router lives - @important REPLACE WITH TRUE VALUE PRIOR DEPLOYMENT
+ROUTER_IP_ADDRESS = None
+
 # How long a leader has to ping - @important INCREASE THIS IF YOU NEED MORE TIME TO BOOT RVM SERVERS UP!
 LEADER_PING_TIMEOUT_SECONDS = 3
 
@@ -225,6 +228,12 @@ def ping_rvm(ip_address, command):
 def ping_uvm(ip_address, command):
     return get_request('http://'+ip_address+':5001/'+command) == 200
 
+# Ping a Router IP address and return if got a valid response
+def ping_router(command):
+    if ROUTER_IP_ADDRESS == None:
+        return False
+    return get_request('http://'+ROUTER_IP_ADDRESS+':8002/'+command) == 200
+
 
 # Execute leader election protocol
 def elect_leader():
@@ -292,12 +301,23 @@ def replace_self_in_rvm_ip_list(public_ip, new_rvm_ip):
 
 # Update all RVMs with own IP as the new UVM IP
 def forward_new_uvm_ip_to_rvms(public_ip):
-    write_uvm_ip(public_ip)
     rips = rvm_ips()
-    public_ip = urllib.parse.quote(public_ip)
     for rip in rips:
         if not ping_rvm(rip,'rvm_update_uvm_ip/'+public_ip):
             print("rvm> Error trying to forward new UVM IP address to RVM "+rip)
+
+
+def forward_new_uvm_ip_to_router(old_uvm_ip, public_ip):
+    if not ping_router('router_update_uvm_ip/'+old_uvm_ip+'/'+public_ip):
+        print("rvm> Error trying to forward new UVM IP address to central router "+ROUTER_IP_ADDRESS)
+
+
+def forward_new_uvm_ip_to_rvms_and_router(public_ip):
+    old_uvm_ip = urllib.parse.quote(uvm_ip())
+    write_uvm_ip(public_ip)
+    public_ip = urllib.parse.quote(public_ip)
+    forward_new_uvm_ip_to_rvms(public_ip)
+    forward_new_uvm_ip_to_router(old_uvm_ip,public_ip)
 
 
 # Launch the UVM Server
@@ -328,7 +348,7 @@ def become_uvm():
     replace_self_in_rvm_ip_list(public_ip,new_rvm_ip)
     # 3. Forward own IP address to all RVMs to confirm UVM status
     print('rvm> Leader (new UVM) is forwarding itself as the UVM IP address ...')
-    forward_new_uvm_ip_to_rvms(public_ip)
+    forward_new_uvm_ip_to_rvms_and_router(public_ip)
     # 4. Elect a new leader among the RVMs
     print('rvm> Leader (new UVM) is electing a leader amoung the remaining RVMs ...')
     elect_leader()
