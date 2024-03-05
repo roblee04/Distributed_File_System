@@ -26,6 +26,7 @@
 
 import os
 import requests
+import sys
 import threading
 import time
 import urllib.parse
@@ -62,7 +63,7 @@ def get_request(url: str) -> int:
 
 ##############################################################################
 # RVM File Command Forwarding URL Command Extractor
-RVM_IPS_FILENAME = '../ips/rvm.txt'
+RVM_IPS_FILENAME = '../ips/'+sys.argv[1]+'/rvm.txt'
 rvm_ips_file_lock = threading.Lock()
 
 def rvm_ips():
