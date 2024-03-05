@@ -45,7 +45,25 @@ vm_pool = machine_pool(POOL_IPS_FILENAME)
 
 
 UVM_IPS_FILENAME = 'uvm-ips.txt'
-node_lock = Lock()
+node_lock = L##############################################################################
+# Append a string to the path (creates a new file if <path> DNE)
+@app.route('/append/<path>/<data>', methods=['GET'])
+def append(path: str, data: str):
+    try:
+        # find route, and send request to node
+        node_ip = route(path)
+        url = f"{node_ip}/append/{path}/{data}"
+        response = requests.get(url)
+        # when the node responds back, forward reponse back to client
+        if response.status_code == 200:
+            return jsonify({}), 200
+        else:
+            raise Exception("Error Code " + response.status_code)
+
+    except Exception as err_msg:
+        return jsonify({'error': err_msg.args[0]}), 400
+
+ock()
 nodes = machine_pool(UVM_IPS_FILENAME)
 
 print(vm_pool, nodes)
@@ -82,6 +100,9 @@ def route(path: str):
             if response.status_code == 200:
                 return ip
 
+        # if not found, return first node
+        return nodes[0]
+
     # OUTPUT, corresponding node ip
     except Exception as err:
         return err.args[0]
@@ -97,7 +118,7 @@ def read(path: str):
         url = f"{node_ip}/read/{path}"
         response = requests.get(url).json()
 
-        # when the node responds back, forward reponse back to client
+        # when the node responds back, forward response back to client
         if response.status_code == 200:
             data = response.get("data")
             return jsonify({'data': data}), 200
@@ -116,25 +137,6 @@ def write(path: str, data: str):
         # find route, and send request to node
         node_ip = route(path)
         url = f"{node_ip}/write/{path}/{data}"
-        response = requests.get(url)
-        # when the node responds back, forward reponse back to client
-        if response.status_code == 200:
-            return jsonify({}), 200
-        else:
-            raise Exception("Error Code " + response.status_code)
-
-    except Exception as err_msg:
-        return jsonify({'error': err_msg.args[0]}), 400
-
-
-##############################################################################
-# Append a string to the path (creates a new file if <path> DNE)
-@app.route('/append/<path>/<data>', methods=['GET'])
-def append(path: str, data: str):
-    try:
-        # find route, and send request to node
-        node_ip = route(path)
-        url = f"{node_ip}/append/{path}/{data}"
         response = requests.get(url)
         # when the node responds back, forward reponse back to client
         if response.status_code == 200:
