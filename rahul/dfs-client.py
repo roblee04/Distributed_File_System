@@ -26,15 +26,6 @@ def write_file(filename, content):
     else:
         return f"Failed to write to file '{filename}'"
 
-def append_to_file(filename, content):
-    endpoint = f"append/{filename}"
-    data = {"content": content}
-    response = make_request(endpoint, method='POST', data=data)
-    if response.status_code == 200:
-        return f"Content appended to file '{filename}' successfully"
-    else:
-        return f"Failed to append to file '{filename}'"
-
 def delete_file(filename):
     endpoint = f"delete/{filename}"
     response = make_request(endpoint, method='DELETE')
@@ -77,10 +68,6 @@ if __name__ == "__main__":
 
         # Test write
         print(write_file("file4.txt", "This is file4.txt"))
-        print("Read: file4: ", read_file("file4.txt"))
-
-        # Test append
-        print(append_to_file("file4.txt", " - Appended content"))
         print("Read: file4: ", read_file("file4.txt"))
 
         # Test delete
