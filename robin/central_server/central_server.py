@@ -38,7 +38,7 @@ def machine_pool(file_name):
     return pool
 
 IP_ROOT = "../../jordan/ips/"
-
+UVM_PORT = "5001"
 # thread safe global variables
 POOL_IPS_FILENAME = 'pool-ips.txt'
 vm_pool_lock = Lock()
@@ -100,10 +100,10 @@ def route(path: str):
             url = ip +  '/exists/' + path
             response = requests.get(url)
             if response.status_code == 200:
-                return ip
+                return ip + ":" + UVM_PORT
 
         # if not found, return first node
-        return nodes[0]
+        return nodes[0] + ":" + UVM_PORT
 
     # OUTPUT, corresponding node ip
     except Exception as err:
@@ -229,7 +229,7 @@ def get_machine():
 @app.route('/router_update_uvm_ip/<old>/<new>', methods=['GET'])
 def update_uvm():
     old = urllib.parse.unquote(old)
-    new = urllib.parse.unquote(new)
+    new = urllib.parse.unquote(new) 
     nodes = replace_uvm(old, new)
     return jsonify({}), 200
 
