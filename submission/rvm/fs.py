@@ -7,7 +7,6 @@
 
 # ############################################################################
 # @TODO: NEED TO ANCHOR ALL FILE OPERATIONS AT A SAFE ROOT (NOT JUST ANY PATH!)
-# @TODO: CURRENTLY NOT IMPLEMENTING "DELETE N BYTES": ONLY "DELETE A FILE"
 # ############################################################################
 
 
