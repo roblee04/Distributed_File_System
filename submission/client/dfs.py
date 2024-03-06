@@ -15,13 +15,13 @@ import urllib
 
 ##############################################################################
 # Middleware IP Address & Port Number
-BASE_URL = "http://54.215.223.179:8002"
+MIDDLEWARE_IP_ADDRESS = "54.215.223.179"
 
 
 ##############################################################################
 # Request Helper
 def make_request(endpoint):
-    return requests.get(BASE_URL+'/'+endpoint)
+    return requests.get('http://'+MIDDLEWARE_IP_ADDRESS+':8002/'+endpoint)
 
 
 ##############################################################################

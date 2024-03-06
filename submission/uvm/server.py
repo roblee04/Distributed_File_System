@@ -2,19 +2,6 @@
 # Purpose:
 #   UVM server functionality to listen to client file operation requests.
 
-
-
-
-
-##############################################################################
-# @TODO: REPLACE <get_new_rvm_ip> BODY WITH PROPER HTTP CALL TO CENTRAL ROUTER
-##############################################################################
-
-
-
-
-
-
 # SUPPORTED FILE APIs:
 #   1. read a file
 #   2. write data (also creates files)
@@ -45,12 +32,6 @@ RVM_SEED_IP_ADDRESS_LIST_PING_TIMEOUT = 0.25
 
 
 ##############################################################################
-# Get a new IP address for an EC2 RVM
-def get_new_rvm_ip():
-    return None
-
-
-##############################################################################
 # GET Request Helper (returns status code)
 def get_request(url: str) -> int:
     try:
@@ -58,6 +39,27 @@ def get_request(url: str) -> int:
     except Exception as err_msg:
         print('uvm> Error requesting url "'+url+'": '+str(err_msg))
         return 408
+
+
+##############################################################################
+# Get a new IP address for an EC2 RVM
+MIDDLEWARE_IP_FILENAME = '../ips/middleware.txt'
+
+def middleware_ip():
+    with open(MIDDLEWARE_IP_FILENAME, 'r') as file:
+        return file.read().strip()
+
+
+def get_new_rvm_ip():
+    try:
+        response = requests.get('http://'+middleware_ip()+':8002/getmachine')
+        if response.status_code != 200:
+            print('uvm> VM allocation error: Middleware is out of VMs to distribute!')
+            return None
+        return response.json().get("replica")
+    except Exception as err_msg:
+        print('uvm> VM allocation error: Middleware is out of VMs to distribute!')
+        return None
 
 
 ##############################################################################

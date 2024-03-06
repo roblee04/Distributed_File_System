@@ -3,19 +3,6 @@
 #   RVM server functionality to listen to uvm file operation requests.
 #   Also monitors the other RVMs via a leadership election protocol.
 
-
-
-
-
-##############################################################################
-# @TODO: REPLACE <get_new_rvm_ip> BODY WITH PROPER HTTP CALL TO CENTRAL ROUTER
-##############################################################################
-
-
-
-
-
-
 # SUPPORTED FILE APIs:
 #   1. read a file
 #   2. write data (also creates files)
@@ -44,9 +31,6 @@ import fs
 ##############################################################################
 # App Creation + Invariants
 app = Flask(__name__)
-
-# Where the router lives - @important REPLACE WITH TRUE VALUE PRIOR DEPLOYMENT
-ROUTER_IP_ADDRESS = '54.215.223.179'
 
 # How long a leader has to ping - @important INCREASE THIS IF YOU NEED MORE TIME TO BOOT RVM SERVERS UP!
 LEADER_PING_TIMEOUT_SECONDS = 3
@@ -156,12 +140,6 @@ def exists(path: str):
 # RVM HEALTH MONITORING
 
 ##############################################################################
-# Get a new IP address for an EC2 RVM
-def get_new_rvm_ip():
-    return None
-
-
-##############################################################################
 # GET Request Helper (returns status code)
 def get_request(url: str) -> int:
     try:
@@ -169,6 +147,27 @@ def get_request(url: str) -> int:
     except Exception as err_msg:
         print('rvm> Error requesting url "'+url+'": '+str(err_msg))
         return 408
+
+
+##############################################################################
+# Get a new IP address for an EC2 RVM
+MIDDLEWARE_IP_FILENAME = '../ips/middleware.txt'
+
+def middleware_ip():
+    with open(MIDDLEWARE_IP_FILENAME, 'r') as file:
+        return file.read().strip()
+
+
+def get_new_rvm_ip():
+    try:
+        response = requests.get('http://'+middleware_ip()+':8002/getmachine')
+        if response.status_code != 200:
+            print('rvm> VM allocation error: Middleware is out of VMs to distribute!')
+            return None
+        return response.json().get("replica")
+    except Exception as err_msg:
+        print('rvm> VM allocation error: Middleware is out of VMs to distribute!')
+        return None
 
 
 ##############################################################################
@@ -238,10 +237,8 @@ def ping_uvm(ip_address, command):
     return get_request('http://'+ip_address+':5001/'+command) == 200
 
 # Ping a Router IP address and return if got a valid response
-def ping_router(command):
-    if ROUTER_IP_ADDRESS == None:
-        return False
-    return get_request('http://'+ROUTER_IP_ADDRESS+':8002/'+command) == 200
+def ping_router(ip_address, command):
+    return get_request('http://'+ip_address+':8002/'+command) == 200
 
 
 # Execute leader election protocol
@@ -317,8 +314,9 @@ def forward_new_uvm_ip_to_rvms(public_ip):
 
 
 def forward_new_uvm_ip_to_router(old_uvm_ip, public_ip):
-    if not ping_router('router_update_uvm_ip/'+old_uvm_ip+'/'+public_ip):
-        print("rvm> Error trying to forward new UVM IP address to central router "+ROUTER_IP_ADDRESS)
+    mip = middleware_ip()
+    if not ping_router(mip,'router_update_uvm_ip/'+old_uvm_ip+'/'+public_ip):
+        print("rvm> Error trying to forward new UVM IP address to central router "+mip)
 
 
 def forward_new_uvm_ip_to_rvms_and_router(public_ip):
