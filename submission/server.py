@@ -113,7 +113,7 @@ def read(path: str):
         if response.status_code == 200:
             return jsonify({'data': response.json().get("data")}), 200
         else:
-            raise Exception("router> Read Error Code " + response.status_code)
+            raise Exception("router> Read Error Code " + str(response.status_code))
     except Exception as err_msg:
         return jsonify({'error': err_msg.args[0]}), 400
 
@@ -132,7 +132,7 @@ def write(path: str, data: str):
         if response.status_code == 200:
             return jsonify({}), 200
         else:
-            raise Exception("router> Write Error Code " + response.status_code)
+            raise Exception("router> Write Error Code " + str(response.status_code))
 
     except Exception as err_msg:
         return jsonify({'error': err_msg.args[0]}), 400
@@ -149,7 +149,7 @@ def delete(path: str):
         if response.status_code == 200:
             return jsonify({}), 200
         else:
-            raise Exception("router> Delete Error Code " + response.status_code)
+            raise Exception("router> Delete Error Code " + str(response.status_code))
 
     except Exception as err_msg:
         return jsonify({'error': err_msg.args[0]}), 400
@@ -167,7 +167,7 @@ def copy(src_path: str, dest_path: str):
         if response.status_code == 200:
             return jsonify({}), 200
         else:
-            raise Exception("router> Copy Error Code " + response.status_code)
+            raise Exception("router> Copy Error Code " + str(response.status_code))
 
     except Exception as err_msg:
         return jsonify({'error': err_msg.args[0]}), 400
@@ -185,7 +185,7 @@ def rename(old_path: str, new_path: str):
         if response.status_code == 200:
             return jsonify({}), 200
         else:
-            raise Exception("router> Rename Error Code " + response.status_code)
+            raise Exception("router> Rename Error Code " + str(response.status_code))
 
     except Exception as err_msg:
         return jsonify({'error': err_msg.args[0]}), 400
@@ -202,7 +202,7 @@ def exists(path: str):
         if response.status_code == 200:
             return jsonify({'exists': response.json().get("exists")}), 200
         else:
-            raise Exception("router> Exists? Error Code " + response.status_code)
+            raise Exception("router> Exists? Error Code " + str(response.status_code))
 
     except Exception as err_msg:
         return jsonify({'error': err_msg.args[0]}), 400
