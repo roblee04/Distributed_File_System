@@ -2,13 +2,13 @@
 # Purpose:
 #   Route requests from client to corresponding UVMs.
 
-# SUPPORTED ROUTES:
-#   1. read N bytes (or all bytes if given READ_ENTIRE_PATH)
-#   2. write N bytes (also creates files)
-#   3. delete a file (static method)
-#   4. copy a file  (static method)
-#   5. rename (also moves) a file  (static method)
-#   6. check if a file exists  (static method)
+# SUPPORTED ROUTE APIs:
+#   1. read a file
+#   2. write data (also creates files)
+#   3. delete a file
+#   4. copy a file
+#   5. rename (also moves) a file
+#   6. check if a file exists
 
 import os
 from flask import Flask, request, jsonify
