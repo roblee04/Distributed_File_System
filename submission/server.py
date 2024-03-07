@@ -220,7 +220,7 @@ def get_machine():
 ##############################################################################
 # update global uvms / nodes variable
 @app.route('/router_update_uvm_ip/<old>/<new>', methods=['GET'])
-def update_uvm():
+def update_uvm(old, new):
     old = urllib.parse.unquote(old)
     new = urllib.parse.unquote(new) 
     nodes = replace_uvm(old, new)
