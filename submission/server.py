@@ -77,10 +77,7 @@ def request_replica():
 def replace_uvm(old_uvm, new_uvm):
     if old_uvm in nodes:
         with node_lock:
-            idx = nodes.index(old_uvm)
-            del nodes[idx]
-            nodes.insert(idx, new_uvm)
-            return nodes
+            nodes[nodes.index(old_uvm)] = new_uvm
     else:
         raise Exception('error: No UVM to be replaced')
 
@@ -89,15 +86,14 @@ def replace_uvm(old_uvm, new_uvm):
 # ROUTING LOGIC
 # if file found, route to that node
 def route(path: str):
-    # INPUT, path
     try:
         for ip in nodes:
-            #check existence of file on node
-            response = requests.get(ip+'/exists/'+path)
+            location = ip+':'+UVM_PORT
+            response = requests.get(location+'/exists/'+path)
             if response.status_code == 200:
-                return ip + ":" + UVM_PORT
+                return location
         # if not found, return first node
-        return nodes[0] + ":" + UVM_PORT
+        return nodes[0]+":"+UVM_PORT
 
     # OUTPUT, corresponding node ip
     except Exception as err:
@@ -221,9 +217,7 @@ def get_machine():
 # update global uvms / nodes variable
 @app.route('/router_update_uvm_ip/<old>/<new>', methods=['GET'])
 def update_uvm(old, new):
-    old = urllib.parse.unquote(old)
-    new = urllib.parse.unquote(new) 
-    nodes = replace_uvm(old, new)
+    replace_uvm(urllib.parse.unquote(old), urllib.parse.unquote(new))
     return jsonify({}), 200
 
     
