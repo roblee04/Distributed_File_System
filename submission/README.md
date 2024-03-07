@@ -37,6 +37,7 @@ pip install Flask
    * `fs.py`: RVM local file manipulation logic to execute UVM requests.
    * `server.py`: RVM HTTP server accepting UVM file requests.
      - Also manages RVM/UVM server health, getting replacements as needed.
+     - Also acts on standby if pooled to be allocated later as needed.
 4. `server.py`: Middleware/router that clients ping to access our DFS.
 
 
@@ -88,3 +89,28 @@ and `kill` the process that it spawned to become a UVM!
   lsof -i :5001 # yields UVM process information, including the Process ID (PID)
   kill PID # insert PID from the printed info above to kill the spawned UVM
   ```
+
+
+--------------------------------------------------------------------
+## Example:
+
+Suppose we have 2 UVMs with 3 RVMs per UVM, and 5 pooled RVMs. 
+
+Further assume we've already put the 1st UVM/RVM IP addresses in `ips/1/`, 
+and the 2nd in `ips/2/`. We also need the middleware IP in `ips/middleware.txt` 
+and `client/dfs.py`'s `MIDDLEWARE_IP_ADDRESS` global variable. Finally, we put 
+all of our pool RVM IP addresses in `ips/pool-ips.txt`. All that having been 
+done, we can launch our EC2s!
+
+We can set our EC2s up to use `client/dfs.py` by doing the following:
+
+1. SSH into the 1st UVM and its RVMs.
+2. In the UVM: `cd Distributed_File_System/submission/uvm/ && python3 server.py 1`
+3. In each RVM: `cd Distributed_File_System/submission/rvm/ && python3 server.py 1`
+   * Note that all 3 RVMs must launch within 3sec of one another, otherwise a leader will be preemptively elected!
+4. SSH into the 2nd UVM and its RVMs. Launch its UVM and RVMs exactly like the 1st UVM, but with `2` instead of `1`.
+5. SSH into the pool RVMs, and run: `cd Distributed_File_System/submission/rvm/ && python3 server.py 0`
+6. SSH into the router, and run: `cd Distributed_File_System/submission/ && python3 server.py`
+
+Then, in another terminal, navigate into `client/`. Run `python3` at the command line to launch the REPL, then `import dfs` to be able to use `dfs.py`'s functions as methods on the `dfs` module object, thereby dynamically testing out our distributed file system! :)
+
