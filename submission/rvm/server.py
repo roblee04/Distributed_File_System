@@ -35,6 +35,9 @@ app = Flask(__name__)
 # How long a leader has to ping - @important INCREASE THIS IF YOU NEED MORE TIME TO BOOT RVM SERVERS UP!
 LEADER_PING_TIMEOUT_SECONDS = 3
 
+# How often pooled resources check to see if they've been activated
+RVM_POOLED_RESOURCE_AWAKEN_PING_TIMEOUT = 0.25
+
 # How often we ping the UVM
 UVM_PING_TIMEOUT_SECONDS = 0.5
 
@@ -410,7 +413,9 @@ def forward_new_rvm_ips_to_uvm(uvm_ip, ip_address_list):
 
 def forward_new_rvm_ips(new_rvm_ips):
     print('rvm> Leader is forwarding new RVM IP addresses list ...')
-    ip_address_list = urllib.parse.quote('\n'.join(new_rvm_ips))
+    rvm_txt = '\n'.join(new_rvm_ips) 
+    ip_address_list = urllib.parse.quote(rvm_txt)
+    write_rvm_ips(rvm_txt)
     forward_new_rvm_ips_to_rvms(new_rvm_ips,ip_address_list)
     forward_new_rvm_ips_to_uvm(uvm_ip(),ip_address_list)
     print('rvm> Leader finished forwarding the new RVM IP addresses list!')
@@ -490,6 +495,42 @@ def rvm_uvm_ping():
 
 
 ##############################################################################
+# Pooled RVM Waiter: wait until awoken with system parameters
+AWOKEN = False
+awoken_lock = threading.Lock()
+
+@app.route('/rvm_pool_awaken/<family_id>/<current_uvm>/<current_rvms>', methods=['GET'])
+def rvm_pool_awaken(family_id, current_uvm, current_rvms):
+    global RVM_IPS_FILENAME
+    global UVM_IPS_FILENAME
+    try:
+        sys.argv[1] = urllib.parse.unquote(family_id)
+        with rvm_ips_file_lock:
+            RVM_IPS_FILENAME = '../ips/'+sys.argv[1]+'/rvm.txt'
+        with uvm_ips_file_lock:
+            UVM_IPS_FILENAME = '../ips/'+sys.argv[1]+'/uvm.txt'
+        write_uvm_ip(urllib.parse.unquote(current_uvm))
+        write_rvm_ips(urllib.parse.unquote(current_rvms))
+        with awoken_lock:
+            AWOKEN = True
+        print('rvm> Pooled resource pinged to awaken!')
+        return jsonify({}), 200
+    except Exception as err_msg:
+        return jsonify({'error': str(err_msg)}), 400
+
+
+def initiate_pool_protocol():
+    if sys.argv[0] == '0':
+        while True:
+            with awoken_lock:
+                if AWOKEN:
+                    print('rvm> Pooled resource is awaking!')
+                    break
+            time.sleep(RVM_POOLED_RESOURCE_AWAKEN_PING_TIMEOUT)
+    threading.Thread(target=elect_leader_if_missing_ping, daemon=True).start()
+
+
+##############################################################################
 # Start the server
 if __name__ == '__main__':
     print(
@@ -507,5 +548,5 @@ if __name__ == '__main__':
     Happy coding! :)
     """
     )
-    threading.Thread(target=elect_leader_if_missing_ping, daemon=True).start()
+    threading.Thread(target=initiate_pool_protocol, daemon=True).start()
     app.run(host='0.0.0.0', debug=True, use_reloader=False)
