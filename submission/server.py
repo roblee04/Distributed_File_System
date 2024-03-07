@@ -5,11 +5,10 @@
 # SUPPORTED ROUTES:
 #   1. read N bytes (or all bytes if given READ_ENTIRE_PATH)
 #   2. write N bytes (also creates files)
-#   3. append N bytes (also creates files)
-#   4. delete a file (static method)
-#   5. copy a file  (static method)
-#   6. rename (also moves) a file  (static method)
-#   7. check if a file exists  (static method)
+#   3. delete a file (static method)
+#   4. copy a file  (static method)
+#   5. rename (also moves) a file  (static method)
+#   6. check if a file exists  (static method)
 
 import os
 from flask import Flask, request, jsonify
