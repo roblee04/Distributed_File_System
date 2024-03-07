@@ -63,8 +63,11 @@ nodes = init_uvms(IP_ROOT)
 def request_replica():
     with vm_pool_lock:
         if len(vm_pool) >= 1:
-            return jsonify({'replica': vm_pool.pop(0)}), 200
+            vmip = vm_pool.pop(0)
+            print('router> Found an available pool VM: '+vmip)
+            return jsonify({'replica': vmip}), 200
         else:
+            print('router> No pool VMs left to allocate!')
             return jsonify({'replica': None}), 200
 
 
@@ -72,6 +75,7 @@ def request_replica():
 # UVM IP ADDRESS REPLACEMENT LOGIC
 def replace_uvm(old_uvm, new_uvm):
     if old_uvm in nodes:
+        print('router> Replacing UVM IP '+old_uvm+' with '+new_uvm)
         with node_lock:
             nodes[nodes.index(old_uvm)] = new_uvm
     else:
@@ -107,6 +111,7 @@ def route(path: str):
 def read(path: str):
     try:
         # find route, and send request to node
+        print('router> Pinged to write to '+urllib.parse.unquote(path))
         url_header = route(path)
         response = requests.get(url_header+"/read/"+path)
         # when the node responds back, forward response back to client
@@ -123,8 +128,7 @@ def read(path: str):
 @app.route('/write/<path>/<data>', methods=['GET'])
 def write(path: str, data: str):
     try:
-        path = urllib.parse.unquote(path)
-        data = urllib.parse.unquote(data)
+        print('router> Pinged to write to '+urllib.parse.unquote(path))
         # find route, and send request to node
         url_header = route(path)
         response = requests.get(url_header+"/write/"+path+"/"+data)
@@ -143,7 +147,7 @@ def write(path: str, data: str):
 @app.route('/delete/<path>', methods=['GET'])
 def delete(path: str):
     try:
-        path = urllib.parse.unquote(path)
+        print('router> Pinged to delete '+urllib.parse.unquote(path))
         url_header = route(path)
         response = requests.get(url_header+"/delete/"+path)
         if response.status_code == 200:
@@ -160,8 +164,7 @@ def delete(path: str):
 @app.route('/copy/<src_path>/<dest_path>', methods=['GET'])
 def copy(src_path: str, dest_path: str):
     try:
-        src_path = urllib.parse.unquote(src_path)
-        dest_path = urllib.parse.unquote(dest_path)
+        print('router> Pinged to copy '+urllib.parse.unquote(src_path)+' to '+urllib.parse.unquote(dest_path))
         url_header = route(src_path)
         response = requests.get(url_header+"/copy/"+src_path+"/"+dest_path)
         if response.status_code == 200:
@@ -178,8 +181,7 @@ def copy(src_path: str, dest_path: str):
 @app.route('/rename/<old_path>/<new_path>', methods=['GET'])
 def rename(old_path: str, new_path: str):
     try:
-        old_path = urllib.parse.unquote(old_path)
-        new_path = urllib.parse.unquote(new_path)
+        print('router> Pinged to rename '+urllib.parse.unquote(old_path)+' as '+urllib.parse.unquote(new_path))
         url_header = route(old_path)
         response = requests.get(url_header+"/rename/"+old_path+"/"+new_path)
         if response.status_code == 200:
@@ -196,7 +198,7 @@ def rename(old_path: str, new_path: str):
 @app.route('/exists/<path>', methods=['GET'])
 def exists(path: str):
     try:
-        path = urllib.parse.unquote(path)
+        print('router> Pinged whether '+urllib.parse.unquote(path)+' exists!')
         url_header = route(path)
         response = requests.get(url_header+"/exists/"+path)
         if response.status_code == 200:
@@ -211,6 +213,7 @@ def exists(path: str):
 # gives machines to nodes that need it
 @app.route('/getmachine', methods=['GET'])
 def get_machine():
+    print('router> Pinged to allocate a VM!')
     return request_replica()
 
 
