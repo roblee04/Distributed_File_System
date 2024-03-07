@@ -94,7 +94,7 @@ and `kill` the process that it spawned to become a UVM!
 --------------------------------------------------------------------
 ## Example:
 
-Suppose we have 2 UVMs with 3 RVMs per UVM, and 5 pooled RVMs. 
+Suppose we have 2 UVMs with 3 RVMs per UVM, and 5 pooled RVMs for later allocation. 
 
 Further assume we've already put the 1st UVM/RVM IP addresses in `ips/1/`, 
 and the 2nd in `ips/2/`. We also need the middleware IP in `ips/middleware.txt` 
