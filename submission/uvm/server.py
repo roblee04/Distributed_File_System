@@ -184,7 +184,7 @@ def rename(old_path: str, new_path: str):
     try:
         old_path = urllib.parse.unquote(old_path)
         new_path = urllib.parse.unquote(new_path)
-        fs.copy(old_path,new_path)
+        fs.rename(old_path,new_path)
         forward_command(request.url)
         return jsonify({}), 200
     except fs.DistributedFileSystemError:
