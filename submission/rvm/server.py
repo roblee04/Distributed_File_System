@@ -152,25 +152,19 @@ def get_request(url: str) -> int:
         return 408
 
 
-##############################################################################
-# Get a new IP address for an EC2 RVM
-MIDDLEWARE_IP_FILENAME = '../ips/middleware.txt'
-
-def middleware_ip():
-    with open(MIDDLEWARE_IP_FILENAME, 'r') as file:
-        return file.read().strip()
+# Ping an RVM IP address and return if got a valid response
+def ping_rvm(ip_address, command):
+    return get_request('http://'+ip_address+':5000/'+command) == 200
 
 
-def get_new_rvm_ip():
-    try:
-        response = requests.get('http://'+middleware_ip()+':8002/getmachine')
-        if response.status_code != 200:
-            print('rvm> VM allocation error: Middleware is out of VMs to distribute!')
-            return None
-        return response.json().get("replica")
-    except Exception as err_msg:
-        print('rvm> VM allocation error: Middleware is out of VMs to distribute!')
-        return None
+# Ping a UVM IP address and return if got a valid response
+def ping_uvm(ip_address, command):
+    return get_request('http://'+ip_address+':5001/'+command) == 200
+
+
+# Ping a Router IP address and return if got a valid response
+def ping_router(ip_address, command):
+    return get_request('http://'+ip_address+':8002/'+command) == 200
 
 
 ##############################################################################
@@ -210,6 +204,39 @@ def write_uvm_ip(uvm_ip_contents: str):
 
 
 ##############################################################################
+# Get a new IP address for an EC2 RVM
+MIDDLEWARE_IP_FILENAME = '../ips/middleware.txt'
+
+def middleware_ip():
+    with open(MIDDLEWARE_IP_FILENAME, 'r') as file:
+        return file.read().strip()
+
+
+def ping_middleware_for_new_rvm_ip():
+    try:
+        response = requests.get('http://'+middleware_ip()+':8002/getmachine')
+        if response.status_code != 200:
+            print('rvm> VM allocation error: Middleware is out of VMs to distribute!')
+            return None
+        return response.json().get("replica")
+    except Exception as err_msg:
+        print('rvm> VM allocation error: Middleware is out of VMs to distribute!')
+        return None
+
+
+def get_new_rvm_ip():
+    while True:
+        rip = ping_middleware_for_new_rvm_ip()
+        if rip == None:
+            return None
+        family = urllib.parse.quote(sys.argv[1])
+        uvm = urllib.parse.quote(uvm_ip())
+        rvms = urllib.parse.quote('\n'.join(rvm_ips()))
+        if ping_rvm(rip,'rvm_pool_awaken/'+family+'/'+uvm+'/'+rvms):
+            return rip
+
+
+##############################################################################
 # Listen for a ping from the RVM leader: elect a new leader upon death.
 # Track whether should continue RVM daemons (stops when becoming a UVM)
 EXECUTING_RVM_DAEMONS = True
@@ -229,19 +256,6 @@ def reset_last_leader_ping_time():
 def time_since_last_leader_ping():
     with last_leader_ping_time_lock:
         return time.time() - last_leader_ping_time
-
-
-# Ping an RVM IP address and return if got a valid response
-def ping_rvm(ip_address, command):
-    return get_request('http://'+ip_address+':5000/'+command) == 200
-
-# Ping a UVM IP address and return if got a valid response
-def ping_uvm(ip_address, command):
-    return get_request('http://'+ip_address+':5001/'+command) == 200
-
-# Ping a Router IP address and return if got a valid response
-def ping_router(ip_address, command):
-    return get_request('http://'+ip_address+':8002/'+command) == 200
 
 
 # Execute leader election protocol
