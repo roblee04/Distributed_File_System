@@ -520,7 +520,7 @@ def rvm_pool_awaken(family_id, current_uvm, current_rvms):
 
 
 def initiate_pool_protocol():
-    if sys.argv[0] == '0':
+    if sys.argv[1] == '0':
         while True:
             with awoken_lock:
                 if AWOKEN:
