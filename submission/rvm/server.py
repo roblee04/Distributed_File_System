@@ -261,6 +261,7 @@ def elect_leader():
 
 # Verify received ping from leader within <LEADER_PING_TIMEOUT_SECONDS>
 def elect_leader_if_missing_ping():
+    print('rvm> Leader detection and election protocol initiated!')
     while EXECUTING_RVM_DAEMONS:
         time_elapsed = time_since_last_leader_ping()
         if time_elapsed >= LEADER_PING_TIMEOUT_SECONDS:
@@ -503,6 +504,7 @@ awoken_lock = threading.Lock()
 def rvm_pool_awaken(family_id, current_uvm, current_rvms):
     global RVM_IPS_FILENAME
     global UVM_IPS_FILENAME
+    global AWOKEN
     try:
         sys.argv[1] = urllib.parse.unquote(family_id)
         with rvm_ips_file_lock:
