@@ -69,7 +69,10 @@ Write each RVM public IP address, one per line, in `ips/<n>/rvm.txt`.
 ### Running the UVM's File System Web Server:
 On the UVM: `python3 uvm/server.py <n>`
 
-On each RVM: `python3 rvm/server.py <n>`
+On each active RVM: `python3 rvm/server.py <n>`
+
+On each pooled RVM: `python3 rvm/server.py 0`
+* `0` here denotes that the RVM should stand by for remote activation.
 
 To interact with the UVM webserver, use: `http://<PUBLIC-IP-ADDRESS>:5001/<COMMAND>`
 * ___Important: Flask prints out the WRONG IP address!___
