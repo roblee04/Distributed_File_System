@@ -570,7 +570,7 @@ def initiate_pool_protocol():
                     print('rvm> Pooled resource is awaking!')
                     break
             time.sleep(RVM_POOLED_RESOURCE_AWAKEN_PING_TIMEOUT)
-        print('pool-rvm> Awoken pooled RVM waiting for '+RVM_POOLED_RESOURCE_INTEGRATION_BUFFER_TIME+'s for system integration!')
+        print('pool-rvm> Awoken pooled RVM waiting for '+str(RVM_POOLED_RESOURCE_INTEGRATION_BUFFER_TIME)+'s for system integration!')
         time.sleep(RVM_POOLED_RESOURCE_INTEGRATION_BUFFER_TIME)
     threading.Thread(target=elect_leader_if_missing_ping, daemon=True).start()
 
