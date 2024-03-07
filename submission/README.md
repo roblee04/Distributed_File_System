@@ -112,5 +112,7 @@ We can set up our EC2s to use `client/dfs.py` by doing the following:
 5. SSH into the pool RVMs, and run: `cd Distributed_File_System/submission/rvm/ && python3 server.py 0`
 6. SSH into the router, and run: `cd Distributed_File_System/submission/ && python3 server.py`
 
-Then, in another terminal, navigate into `client/`. Run `python3` at the command line to launch the REPL, then `import dfs` to be able to use `dfs.py`'s functions as methods on the `dfs` module object, thereby dynamically testing out our distributed file system! :)
+Then, in another terminal, navigate into `client/`. Run `python3` at the command line to launch the REPL, 
+then `import dfs` to be able to use `dfs.py`'s functions as methods on the `dfs` module object, thereby 
+dynamically testing out our distributed file system! :)
 
