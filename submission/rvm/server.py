@@ -38,6 +38,9 @@ LEADER_PING_TIMEOUT_SECONDS = 3
 # How often pooled resources check to see if they've been activated
 RVM_POOLED_RESOURCE_AWAKEN_PING_TIMEOUT = 0.25
 
+# How long a pooled RVM waits to start (gives other RVMs time to integrate this RVM)
+RVM_POOLED_RESOURCE_INTEGRATION_BUFFER_TIME = 1
+
 # How often we ping the UVM
 UVM_PING_TIMEOUT_SECONDS = 0.5
 
@@ -543,6 +546,8 @@ def initiate_pool_protocol():
                     print('rvm> Pooled resource is awaking!')
                     break
             time.sleep(RVM_POOLED_RESOURCE_AWAKEN_PING_TIMEOUT)
+        print('rvm> Awoken pooled RVM waiting for '+RVM_POOLED_RESOURCE_INTEGRATION_BUFFER_TIME+'s for system integration!')
+        time.sleep(RVM_POOLED_RESOURCE_INTEGRATION_BUFFER_TIME)
     threading.Thread(target=elect_leader_if_missing_ping, daemon=True).start()
 
 
