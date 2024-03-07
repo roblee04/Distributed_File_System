@@ -84,35 +84,38 @@ def replace_uvm(old_uvm, new_uvm):
 
 ##############################################################################
 # ROUTING LOGIC
-def get_request(url: str) -> int:
+def uvm_can_be_routed_to(ip_address: str, operation: str, path: str):
     try:
-        return requests.get(url).status_code
+        return requests.get('http://'+ip_address+':5001/uvm_can_be_routed_with/'+operation+'/'+path)
     except Exception as err_msg:
         print('router> Error requesting url "'+url+'": '+str(err_msg))
-        return 408
+        return None
 
 
-def ping_uvm(ip_address, command):
-    return get_request('http://'+ip_address+':5001/'+command) == 200
-
-
-# if file found, route to that node
-def route(path: str):
+# Determine which UVM can execute <operation> on <path>
+def route(operation: str, path: str):
+    viable_uvms = []
     for ip in nodes:
-        if ping_uvm(ip,'/exists/'+path):
-            return 'http://'+ip+':5001'
-    # if not found, return first node
-    return 'http://'+nodes[0]+":5001"
-
+        response = uvm_can_be_routed_to(ip,operation,path):
+        if response != None and response.status_code == 200:
+            if response.json().get('preferred'):
+                return 'http://'+ip+':5001'
+            else:
+                viable_uvms.append(ip)
+    if len(viable_uvms) > 0:
+        return 'http://'+viable_uvms[0]+":5001"
+    print('router> Failed to route request "'+operation+'" with file "'+path+'" to a UVM!')
+    return 'http://'+nodes[0]+":5001" # let this request fail to signal an error to the user
+    
 
 ##############################################################################
-# Read N bytes from a path (read everything if N=-1)
+# Read the contents of a path
 @app.route('/read/<path>', methods=['GET'])
 def read(path: str):
     try:
         # find route, and send request to node
         print('router> Pinged to write to '+urllib.parse.unquote(path))
-        url_header = route(path)
+        url_header = route('read',path)
         response = requests.get(url_header+"/read/"+path)
         # when the node responds back, forward response back to client
         if response.status_code == 200:
@@ -130,7 +133,7 @@ def write(path: str, data: str):
     try:
         print('router> Pinged to write to '+urllib.parse.unquote(path))
         # find route, and send request to node
-        url_header = route(path)
+        url_header = route('write',path)
         response = requests.get(url_header+"/write/"+path+"/"+data)
         # when the node responds back, forward reponse back to client
         if response.status_code == 200:
@@ -148,7 +151,7 @@ def write(path: str, data: str):
 def delete(path: str):
     try:
         print('router> Pinged to delete '+urllib.parse.unquote(path))
-        url_header = route(path)
+        url_header = route('delete',path)
         response = requests.get(url_header+"/delete/"+path)
         if response.status_code == 200:
             return jsonify({}), 200
@@ -165,7 +168,7 @@ def delete(path: str):
 def copy(src_path: str, dest_path: str):
     try:
         print('router> Pinged to copy '+urllib.parse.unquote(src_path)+' to '+urllib.parse.unquote(dest_path))
-        url_header = route(src_path)
+        url_header = route('copy',src_path)
         response = requests.get(url_header+"/copy/"+src_path+"/"+dest_path)
         if response.status_code == 200:
             return jsonify({}), 200
@@ -182,7 +185,7 @@ def copy(src_path: str, dest_path: str):
 def rename(old_path: str, new_path: str):
     try:
         print('router> Pinged to rename '+urllib.parse.unquote(old_path)+' as '+urllib.parse.unquote(new_path))
-        url_header = route(old_path)
+        url_header = route('rename',old_path)
         response = requests.get(url_header+"/rename/"+old_path+"/"+new_path)
         if response.status_code == 200:
             return jsonify({}), 200
@@ -199,7 +202,7 @@ def rename(old_path: str, new_path: str):
 def exists(path: str):
     try:
         print('router> Pinged whether '+urllib.parse.unquote(path)+' exists!')
-        url_header = route(path)
+        url_header = route('exists',path)
         response = requests.get(url_header+"/exists/"+path)
         if response.status_code == 200:
             return jsonify({'exists': response.json().get("exists")}), 200

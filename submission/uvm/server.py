@@ -24,6 +24,9 @@ import fs
 # App Creation + Invariants
 app = Flask(__name__)
 
+# How many files we want to allow to be allocated per UVM
+UVM_MAXIMUM_NUMBER_OF_FILES = 3
+
 # How long we wait between checks as to whether every RVM has died
 RVM_HEALTH_PING_TIMEOUT = 3
 
@@ -136,7 +139,7 @@ def get_new_rvm_ip():
 # FILE OPERATIONS
 
 ##############################################################################
-# Read N bytes from a path
+# Read the contents of a path
 # >> NOTE: No need to forward to our RVMs here!
 @app.route('/read/<path>', methods=['GET'])
 def read(path: str):
@@ -157,7 +160,7 @@ def write(path: str, data: str):
     try:
         path = urllib.parse.unquote(path)
         data = urllib.parse.unquote(data)
-        fs.write(path, data)
+        fs.write(path,data)
         register_command(request.url)
         forward_command(request.url)
         return jsonify({}), 200
@@ -286,6 +289,35 @@ def keep_rvms_alive():
         if failed_count == len(rips):
             spawn_seed_rvm()
         time.sleep(RVM_HEALTH_PING_TIMEOUT)
+
+
+##############################################################################
+# ROUTER UVM SELECTION
+FILES_ROOT_DIRECTORY = os.path.dirname(__file__)+'/../rootdir/'
+
+def number_of_files_in_uvm():
+    count = 0
+    for entry in os.listdir(FILES_ROOT_DIRECTORY):
+        if os.path.isfile(os.path.join(FILES_ROOT_DIRECTORY,entry)):
+            count += 1
+    return count
+
+
+@app.route('/uvm_can_be_routed_with/<operation>/<path>', methods=['GET'])
+def uvm_can_be_routed_with(operation, path):
+    try:
+        operation = urllib.parse.unquote(operation)
+        path = urllib.parse.unquote(path)
+        print('uvm> Pinged whether can support operation "'+operation+'" on file "'+path+'"!')
+        if fs.exists(path):
+            return jsonify({ 'preferred': True }), 200
+        if operation == 'exists':
+            return jsonify({ 'preferred': False }), 200 # use this UVM iff no others have the file
+        if(operation == 'write' and number_of_files_in_uvm() <= UVM_MAXIMUM_NUMBER_OF_FILES+1)
+            return jsonify({ 'preferred': False }), 200 # use this UVM iff no others have the file
+        return jsonify({'error': 'UVM can\'t support operation "'+operation+'" for file "'+path+'"'}), 403
+    except Exception as err_msg:
+        return jsonify({'error': str(err_msg)}), 400
 
 
 ##############################################################################

@@ -79,7 +79,7 @@ def forward_commands(rvm_ip: str):
 # FILE OPERATIONS
 
 ##############################################################################
-# Read N bytes from a path
+# Read the contents of a path
 @app.route('/read/<path>', methods=['GET'])
 def read(path: str):
     try:
