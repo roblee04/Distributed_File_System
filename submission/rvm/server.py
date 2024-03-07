@@ -11,12 +11,13 @@
 #   5. rename (also moves) a file
 #   6. check if a file exists
 
-# SUPPORTED RVM-HEALTH APIs:
-#   1. Listen for leader pings
+# SUPPORTED UVM/RVM-HEALTH APIs:
+#   1. Ping UVM to verify alive, and replace as needed
+#   2. Listen for leader pings
 #      * Elect a new leader if no ping in T time units
-#   2. Listen for request to become the leader
+#   3. Listen for request to become the leader
 #      * Start pinging nodes to test if alive after leadership
-#   3. Change RVM IP address list
+#   4. Change RVM IP address list
 
 import os
 import requests
