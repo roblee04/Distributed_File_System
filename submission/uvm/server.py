@@ -82,6 +82,23 @@ def forward_command(original_url):
 
 
 ##############################################################################
+# Store all actions to be able to forward them to newly allocated servers
+_command_history = []
+_command_history_lock = threading.Lock()
+
+def register_command(url: str):
+    with _command_history_lock:
+        _command_history.append(url[url.find(':5001')+6:])
+
+
+def forward_commands(rvm_ip: str):
+    with _command_history_lock:
+        for command in _command_history:
+            if not ping_rvm(rvm_ip,command):
+                print('uvm> Failed to forward action "'+command+'" to VM '+rvm_ip)
+
+
+##############################################################################
 # Get a new IP address for an EC2 RVM
 MIDDLEWARE_IP_FILENAME = '../ips/middleware.txt'
 
@@ -111,6 +128,7 @@ def get_new_rvm_ip():
         uvm = urllib.parse.quote(uvm_ip())
         rvms = urllib.parse.quote('\n'.join(rvm_ips()))
         if ping_rvm(rip,'rvm_pool_awaken/'+family+'/'+uvm+'/'+rvms):
+            forward_commands(rip)
             return rip
 
 
@@ -140,6 +158,7 @@ def write(path: str, data: str):
         path = urllib.parse.unquote(path)
         data = urllib.parse.unquote(data)
         fs.write(path, data)
+        register_command(request.url)
         forward_command(request.url)
         return jsonify({}), 200
     except Exception as err_msg:
@@ -153,6 +172,7 @@ def delete(path: str):
     try:
         path = urllib.parse.unquote(path)
         fs.delete(path)
+        register_command(request.url)
         forward_command(request.url)
         return jsonify({}), 200
     except fs.DistributedFileSystemError:
@@ -169,6 +189,7 @@ def copy(src_path: str, dest_path: str):
         src_path = urllib.parse.unquote(src_path)
         dest_path = urllib.parse.unquote(dest_path)
         fs.copy(src_path,dest_path)
+        register_command(request.url)
         forward_command(request.url)
         return jsonify({}), 200
     except fs.DistributedFileSystemError:
@@ -185,6 +206,7 @@ def rename(old_path: str, new_path: str):
         old_path = urllib.parse.unquote(old_path)
         new_path = urllib.parse.unquote(new_path)
         fs.rename(old_path,new_path)
+        register_command(request.url)
         forward_command(request.url)
         return jsonify({}), 200
     except fs.DistributedFileSystemError:
