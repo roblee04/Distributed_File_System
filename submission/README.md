@@ -98,11 +98,11 @@ Suppose we have 2 UVMs with 3 RVMs per UVM, and 5 pooled RVMs for later allocati
 
 Further assume we've already put the 1st UVM/RVM IP addresses in `ips/1/`, 
 and the 2nd in `ips/2/`. We also need the middleware IP in `ips/middleware.txt` 
-and `client/dfs.py`'s `MIDDLEWARE_IP_ADDRESS` global variable. Finally, we put 
-all of our pool RVM IP addresses in `ips/pool-ips.txt`. All that having been 
-done, we can launch our EC2s!
+and in `client/dfs.py`'s `MIDDLEWARE_IP_ADDRESS` global variable. Finally, we put 
+all of our pooled RVM IP addresses in `ips/pool-ips.txt`. All having been done, we 
+can now launch our EC2 instances!
 
-We can set our EC2s up to use `client/dfs.py` by doing the following:
+We can set up our EC2s to use `client/dfs.py` by doing the following:
 
 1. SSH into the 1st UVM and its RVMs.
 2. In the UVM: `cd Distributed_File_System/submission/uvm/ && python3 server.py 1`
