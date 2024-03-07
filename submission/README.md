@@ -29,6 +29,7 @@ pip install Flask
 
 1. `client/`:
    * `dfs.py`: Python library code for users to interface with our DFS.
+     Requires having UVMs/RVMs, pooled RVMs, and the middleware all be active!
 2. `uvm/`:
    * `fs.py`: UVM local file manipulation logic to execute client requests.
    * `server.py`: UVM HTTP server accepting client file requests.
