@@ -219,11 +219,11 @@ def ping_middleware_for_new_rvm_ip():
     try:
         response = requests.get('http://'+middleware_ip()+':8002/getmachine')
         if response.status_code != 200:
-            print('rvm> VM allocation error: Middleware is out of VMs to distribute!')
+            print('lead-rvm> VM allocation error: Middleware is out of VMs to distribute!')
             return None
         return response.json().get("replica")
     except Exception as err_msg:
-        print('rvm> VM allocation error: Middleware is out of VMs to distribute!')
+        print('lead-rvm> VM allocation error: Middleware is out of VMs to distribute!')
         return None
 
 
@@ -308,10 +308,10 @@ def get_public_ip():
             response = requests.get('http://checkip.amazonaws.com')
             response.raise_for_status()
             public_ip = response.text.strip()
-            print('rvm> Leader got its own public IP: '+public_ip)
+            print('lead-rvm> Leader got its own public IP: '+public_ip)
             return public_ip
         except Exception as err_msg:
-            print("rvm> Error fetching leader's public IP address: "+str(err_msg))
+            print("lead-rvm> Error fetching leader's public IP address: "+str(err_msg))
         time.sleep(RVM_PUBLIC_IP_GETTER_TIMEOUT)
 
 
@@ -331,13 +331,13 @@ def forward_new_uvm_ip_to_rvms(public_ip):
     rips = rvm_ips()
     for rip in rips:
         if not ping_rvm(rip,'rvm_update_uvm_ip/'+public_ip):
-            print("rvm> Error trying to forward new UVM IP address to RVM "+rip)
+            print("lead-rvm> Error trying to forward new UVM IP address to RVM "+rip)
 
 
 def forward_new_uvm_ip_to_router(old_uvm_ip, public_ip):
     mip = middleware_ip()
     if not ping_router(mip,'router_update_uvm_ip/'+old_uvm_ip+'/'+public_ip):
-        print("rvm> Error trying to forward new UVM IP address to central router "+mip)
+        print("lead-rvm> Error trying to forward new UVM IP address to central router "+mip)
 
 
 def forward_new_uvm_ip_to_rvms_and_router(public_ip):
@@ -367,24 +367,24 @@ def become_uvm():
     EXECUTING_RVM_DAEMONS = False
     # 1. Spawn UVM server to run on this machine
     command = "python3 "+os.getcwd()+"/../uvm/server.py "+sys.argv[1]+" &> logs.txt"
-    print('rvm> Becoming a UVM!')
-    print('rvm> Starting the UVM process: see output in "./logs.txt"')
-    print('rvm> Starting command: '+command)
+    print('lead-rvm> Becoming a UVM!')
+    print('lead-rvm> Starting the UVM process: see output in "./logs.txt"')
+    print('lead-rvm> Starting command: '+command)
     launch_uvm_server(command)
     # 2. Replace self with the new RVM's IP in the IP address list
-    print('rvm> Leader (new UVM) is forwarding new RVM IP address list ...')
+    print('lead-rvm> Leader (new UVM) is forwarding new RVM IP address list ...')
     replace_self_in_rvm_ip_list(public_ip,new_rvm_ip)
     # 3. Forward own IP address to all RVMs to confirm UVM status
-    print('rvm> Leader (new UVM) is forwarding itself as the UVM IP address ...')
+    print('lead-rvm> Leader (new UVM) is forwarding itself as the UVM IP address ...')
     forward_new_uvm_ip_to_rvms_and_router(public_ip)
     # 4. Elect a new leader among the RVMs
-    print('rvm> Leader (new UVM) is electing a leader amoung the remaining RVMs ...')
+    print('lead-rvm> Leader (new UVM) is electing a leader amoung the remaining RVMs ...')
     elect_leader()
     # 5. Terminate the current RVM
-    print('rvm> Leader (new UVM) is terminating: became a UVM! :)')
-    print('     >> Make sure to eventually lookup and kill the PID of the spawned UVM!')
-    print('        $ lsof -i :5001')
-    print('        $ kill <pid>')
+    print('lead-rvm> Leader (new UVM) is terminating: became a UVM! :)')
+    print('          >> Make sure to eventually lookup and kill the PID of the spawned UVM!')
+    print('             $ lsof -i :5001')
+    print('             $ kill <pid>')
     os._exit(0) # required to properly end the flask server (smh)
 
 
@@ -393,10 +393,10 @@ def become_uvm_if_missing_ping():
     while True:
         uip = uvm_ip()
         if not ping_uvm(uip,'/uvm_leader_ping'):
-            print('rvm> Failed to reach UVM (will replace with self): '+uip)
+            print('lead-rvm> Failed to reach UVM (will replace with self): '+uip)
             become_uvm()
         else:
-            print('rvm> Confirmed UVM is alive!')
+            print('lead-rvm> Confirmed UVM is alive!')
         time.sleep(UVM_PING_TIMEOUT_SECONDS)
 
 
@@ -407,7 +407,7 @@ def get_dead_rvm_ips(rips):
     dead_ips = []
     for rip in rips:
         if not ping_rvm(rip,'rvm_leader_ping'):
-            print('rvm> Leader failed to reach dead RVM (will replace it): '+rip)
+            print('lead-rvm> Failed to reach dead RVM (will replace it): '+rip)
             dead_ips.append(rip)
     return dead_ips
 
@@ -421,22 +421,22 @@ def get_new_rvm_ips(total_new_rvms):
 def forward_new_rvm_ips_to_rvms(new_rvm_ips, ip_address_list):
     for rip in new_rvm_ips:
         if not ping_rvm(rip,'rvm_update_rvm_ips/'+ip_address_list):
-            print("rvm> Error trying to forward new RVM IP address list to RVM "+rip)
+            print("lead-rvm> Error trying to forward new RVM IP address list to RVM "+rip)
 
 
 def forward_new_rvm_ips_to_uvm(uvm_ip, ip_address_list):
     if not ping_uvm(uvm_ip,'uvm_update_rvm_ips/'+ip_address_list):
-        print("rvm> Error trying to forward new RVM IP address list to UVM "+uvm_ip)
+        print("lead-rvm> Error trying to forward new RVM IP address list to UVM "+uvm_ip)
 
 
 def forward_new_rvm_ips(new_rvm_ips):
-    print('rvm> Leader is forwarding new RVM IP addresses list ...')
+    print('lead-rvm> Forwarding new RVM IP addresses list ...')
     rvm_txt = '\n'.join(new_rvm_ips) 
     ip_address_list = urllib.parse.quote(rvm_txt)
     write_rvm_ips(rvm_txt)
     forward_new_rvm_ips_to_rvms(new_rvm_ips,ip_address_list)
     forward_new_rvm_ips_to_uvm(uvm_ip(),ip_address_list)
-    print('rvm> Leader finished forwarding the new RVM IP addresses list!')
+    print('lead-rvm> Finished forwarding the new RVM IP addresses list!')
 
 
 # Replace dead RVMs as needed
@@ -445,11 +445,11 @@ def replace_rvms_if_missing_ping():
         rips = rvm_ips()
         dead_ips = get_dead_rvm_ips(rips)
         if len(dead_ips) != 0:
-            print('rvm> Leader found dead RVM IPs: '+', '.join(dead_ips))
+            print('lead-rvm> Found dead RVM IPs: '+', '.join(dead_ips))
             live_ips = [ip for ip in rips if ip not in dead_ips]
             forward_new_rvm_ips(live_ips + get_new_rvm_ips(len(dead_ips)))
         else:
-            print('rvm> Leader confirmed all RVM IPs are active!')
+            print('lead-rvm> Confirmed all RVM IPs are active!')
         time.sleep(RVM_PING_CHECK_TIMEOUT_SECONDS)
 
 
@@ -461,7 +461,7 @@ leader_pinging_rvms = False
 # Assume leadership and listen for RVM pings
 @app.route('/rvm_become_leader', methods=['GET'])
 def rvm_become_leader():
-    print('rvm> Became the leader!')
+    print('lead-rvm> Became the leader!')
     global leader_pinging_rvms
     try:
         with leader_pinging_rvms_lock:
@@ -532,14 +532,14 @@ def rvm_pool_awaken(family_id, current_uvm, current_rvms):
         write_rvm_ips(urllib.parse.unquote(current_rvms))
         with awoken_lock:
             AWOKEN = True
-        print('rvm> Pooled resource pinged to awaken!')
+        print('pool-rvm> Pooled resource pinged to awaken!')
         return jsonify({}), 200
     except Exception as err_msg:
         return jsonify({'error': str(err_msg)}), 400
 
 
 def initiate_pool_protocol():
-    print('rvm> Pooled RVM resource is awaiting allocation!')
+    print('pool-rvm> Pooled RVM resource is awaiting allocation!')
     if sys.argv[1] == '0':
         while True:
             with awoken_lock:
@@ -547,7 +547,7 @@ def initiate_pool_protocol():
                     print('rvm> Pooled resource is awaking!')
                     break
             time.sleep(RVM_POOLED_RESOURCE_AWAKEN_PING_TIMEOUT)
-        print('rvm> Awoken pooled RVM waiting for '+RVM_POOLED_RESOURCE_INTEGRATION_BUFFER_TIME+'s for system integration!')
+        print('pool-rvm> Awoken pooled RVM waiting for '+RVM_POOLED_RESOURCE_INTEGRATION_BUFFER_TIME+'s for system integration!')
         time.sleep(RVM_POOLED_RESOURCE_INTEGRATION_BUFFER_TIME)
     threading.Thread(target=elect_leader_if_missing_ping, daemon=True).start()
 
