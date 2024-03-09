@@ -190,7 +190,7 @@ def get_uvm_ip_address(uvm_ip: str):
 
 
 # Also registers new UVM IP address to our <ips/> subdirectory!
-def get_new_uvm_ip():
+def allocate_new_uvm_ip():
     with uvm_family_creation_lock:
         # 1. Determine which family number directory name we need to create
         family_id = str(get_next_family_unit_id())
@@ -241,7 +241,7 @@ def route(operation: str, path: str):
         print('router> Found a viable UVM to route request to!')
         return 'http://'+viable_uvms[0]+":5001"
     print('router> No viable UVMs found to route request to! Attempting to generate a new UVM/RVM unit ...')
-    new_uip = get_new_uvm_ip()
+    new_uip = allocate_new_uvm_ip()
     if new_uip == None:
         print('router> Failed to route request "'+operation+'" with file "'+path+'" to a UVM!')
         return 'http://'+nodes[0]+":5001" # allow request to fail then trigger client-side exception
