@@ -24,7 +24,7 @@ import fs
 # App Creation + Invariants
 app = Flask(__name__)
 
-# How many files we want to allow to be allocated per UVM
+# How many files we want to allow to be allocated per UVM (beyond README.md)
 UVM_MAXIMUM_NUMBER_OF_FILES = 3
 
 # How long we wait between checks as to whether every RVM has died
@@ -297,9 +297,13 @@ FILES_ROOT_DIRECTORY = os.path.dirname(__file__)+'/../rootdir/'
 def number_of_files_in_uvm():
     count = 0
     for entry in os.listdir(FILES_ROOT_DIRECTORY):
-        if os.path.isfile(os.path.join(FILES_ROOT_DIRECTORY,entry)):
+        if entry != 'README.md' and os.path.isfile(os.path.join(FILES_ROOT_DIRECTORY,entry)):
             count += 1
     return count
+
+
+def can_add_files_to_this_machine():
+    return number_of_files_in_uvm() < UVM_MAXIMUM_NUMBER_OF_FILES
 
 
 @app.route('/uvm_can_be_routed_with/<operation>/<path>', methods=['GET'])
@@ -309,12 +313,12 @@ def uvm_can_be_routed_with(operation, path):
         path = urllib.parse.unquote(path)
         print('uvm> Pinged whether can support operation "'+operation+'" on file "'+path+'"!')
         if fs.exists(path):
-            if operation == 'copy' and number_of_files_in_uvm() > UVM_MAXIMUM_NUMBER_OF_FILES+1:
+            if operation == 'copy' and not can_add_files_to_this_machine():
                 return jsonify({'error': 'UVM can\'t support operation "'+operation+'" for file "'+path+'"'}), 403
             return jsonify({ 'preferred': True }), 200
         if operation == 'exists':
             return jsonify({ 'preferred': False }), 200 # use this UVM iff no others have the file
-        if(operation == 'write' and number_of_files_in_uvm() <= UVM_MAXIMUM_NUMBER_OF_FILES+1):
+        if(operation == 'write' and can_add_files_to_this_machine()):
             return jsonify({ 'preferred': False }), 200 # use this UVM iff no others have the file
         return jsonify({'error': 'UVM can\'t support operation "'+operation+'" for file "'+path+'"'}), 403
     except Exception as err_msg:
