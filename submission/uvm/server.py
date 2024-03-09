@@ -314,7 +314,7 @@ def uvm_can_be_routed_with(operation, path):
             return jsonify({ 'preferred': True }), 200
         if operation == 'exists':
             return jsonify({ 'preferred': False }), 200 # use this UVM iff no others have the file
-        if(operation == 'write' and number_of_files_in_uvm() <= UVM_MAXIMUM_NUMBER_OF_FILES+1)
+        if(operation == 'write' and number_of_files_in_uvm() <= UVM_MAXIMUM_NUMBER_OF_FILES+1):
             return jsonify({ 'preferred': False }), 200 # use this UVM iff no others have the file
         return jsonify({'error': 'UVM can\'t support operation "'+operation+'" for file "'+path+'"'}), 403
     except Exception as err_msg:
