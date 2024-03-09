@@ -204,7 +204,7 @@ def get_new_uvm_ip():
         populate_rvm_txt(family_path,rvm_ips)
         # 6. Put one of the RVM IPs in the <uvm.txt> on the local router machine
         #    * Guarenteed to fail, since the RVM's UVM server isn't up and running!
-        populate_uvm_txt(uvm_ip)
+        populate_uvm_txt(family_path,uvm_ip)
         # 7. Forward the fact that the new family has been created to the pooled resources, awaking each resource
         #    * Have <rvm_pool_awaken/> create the directory and files if the family unit number is new
         awaken_pooled_rvms(family_id,uvm_ip,rvm_ips)
