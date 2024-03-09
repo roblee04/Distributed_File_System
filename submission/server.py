@@ -207,7 +207,7 @@ def route(operation: str, path: str):
     viable_uvms = []
     with node_lock:
         for ip in nodes:
-            response = uvm_can_be_routed_to(ip,operation,path):
+            response = uvm_can_be_routed_to(ip,operation,path)
             if response != None and response.status_code == 200:
                 print('router> Found viable UVM to route request to! Preferred status = '+str(response.json().get('preferred')))
                 if response.json().get('preferred'):
