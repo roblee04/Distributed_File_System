@@ -181,6 +181,7 @@ def get_new_uvm_ip():
         # 3. Request enough replicas for the RVMs
         rvm_ips, uvm_ip = get_replicas_for_rvm_pool(number_RVMs_per_UVM)
         if rvm_ips == None:
+            print('router> Unable to allocate any new machines for an RVM/UVM family unit!')
             return None
         # 4. Create the family's subdirectory in <ips> if needed
         os.makedirs(family_path)
@@ -196,10 +197,12 @@ def get_new_uvm_ip():
         #    * Need to wait for the leader election _and_ UVM escelation procedures to complete in the subnetwork though!
         official_uvm_ip = get_uvm_ip_address(uvm_ip)
         if official_uvm_ip == None:
+            print('router> Unable to locate UVM ping from the allocated RVM/UVM family unit! Presumed dead.')
             return None
         # 9. Add new UVM IP to <nodes> with <node_lock>
         with node_lock:
             nodes.append(official_uvm_ip)
+        print('router> Successfully allocated a new UVM/RVM unit! Unit ID = '+family_id+', UVM IP = '+official_uvm_ip)
 
 
 # Determine which UVM can execute <operation> on <path>
@@ -216,6 +219,7 @@ def route(operation: str, path: str):
                     viable_uvms.append(ip)
     if len(viable_uvms) > 0:
         return 'http://'+viable_uvms[0]+":5001"
+    print('router> No viable UVMs found to route request to! Attempting to generate a new UVM/RVM unit ...')
     new_uip = get_new_uvm_ip()
     if new_uip == None:
         print('router> Failed to route request "'+operation+'" with file "'+path+'" to a UVM!')
