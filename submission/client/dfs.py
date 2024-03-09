@@ -24,6 +24,13 @@ def make_request(endpoint):
     return requests.get('http://'+MIDDLEWARE_IP_ADDRESS+':8002/'+endpoint)
 
 
+def handle_failed_request(response, err_message: str):
+    response_json = response.json()
+    if not 'error' in response_json:
+        raise Exception(err_message)
+    raise Exception(err_message + '. Error: ' + response_json.get('error'))
+
+
 ##############################################################################
 # Read the contents of a file
 def read(path: str) -> str:
@@ -31,7 +38,7 @@ def read(path: str) -> str:
     if response.status_code == 200:
         return response.json().get("data")
     else:
-        raise Exception("Failed to read file '"+path+"': "+response.text)
+        handle_failed_request(response, "Failed to read file '"+path+"'")
 
 
 ##############################################################################
@@ -39,7 +46,7 @@ def read(path: str) -> str:
 def write(path: str, data: str):
     response = make_request("write/"+urllib.parse.quote(path)+"/"+urllib.parse.quote(data))
     if response.status_code != 200:
-        raise Exception("Failed to write to file '"+path+"'")
+        handle_failed_request(response, "Failed to write to file '"+path+"'")
 
 
 ##############################################################################
@@ -47,7 +54,7 @@ def write(path: str, data: str):
 def delete(path: str):
     response = make_request("delete/"+urllib.parse.quote(path))
     if response.status_code != 200:
-        raise Exception("Failed to delete file '"+path+"'")
+        handle_failed_request(response, "Failed to delete file '"+path+"'")
 
 
 ##############################################################################
@@ -55,7 +62,7 @@ def delete(path: str):
 def copy(src_path: str, dest_path: str):
     response = make_request("copy/"+urllib.parse.quote(src_path)+"/"+urllib.parse.quote(dest_path))
     if response.status_code != 200:
-        raise Exception("Failed to copy file '"+src_path+"' to '"+dest_path+"'")
+        handle_failed_request(response, "Failed to copy file '"+src_path+"' to '"+dest_path+"'")
 
 
 ##############################################################################
@@ -63,7 +70,7 @@ def copy(src_path: str, dest_path: str):
 def rename(old_path: str, new_path: str):
     response = make_request("rename/"+urllib.parse.quote(old_path)+"/"+urllib.parse.quote(new_path))
     if response.status_code != 200:
-        raise Exception("Failed to rename file '"+old_path+"' to '"+new_path+"'")
+        handle_failed_request(response, "Failed to rename file '"+old_path+"' to '"+new_path+"'")
 
 
 ##############################################################################
@@ -73,4 +80,4 @@ def exists(path: str) -> bool:
     if response.status_code == 200:
         return response.json().get("exists")
     else:
-        raise Exception("Error checking if file '"+path+"' exists: "+response.text)
+        handle_failed_request(response, "Error checking if file '"+path+"' exists")
