@@ -237,7 +237,7 @@ def middleware_ip():
         return file.read().strip()
 
 
-def ping_middleware_for_new_rvm_ip():
+def get_new_rvm_ip():
     try:
         response = requests.get('http://'+middleware_ip()+':8002/getmachine')
         if response.status_code != 200:
@@ -249,17 +249,13 @@ def ping_middleware_for_new_rvm_ip():
         return None
 
 
-def get_new_rvm_ip():
-    while True:
-        rip = ping_middleware_for_new_rvm_ip()
-        if rip == None:
-            return None
-        family = urllib.parse.quote(sys.argv[1])
-        uvm = urllib.parse.quote(uvm_ip())
-        rvms = urllib.parse.quote('\n'.join(rvm_ips()))
-        if ping_rvm(rip,'rvm_pool_awaken/'+family+'/'+uvm+'/'+rvms):
-            forward_commands(rip)
-            return rip
+@app.route('/rvm_pool_confirm_waiting', methods=['GET'])
+def rvm_pool_confirm_waiting():
+    try:
+        print('rvm> Pinged by a remote allocator to verify alive!')
+        return jsonify({}), 200
+    except Exception as err_msg:
+        return jsonify({'error': str(err_msg)}), 400
 
 
 ##############################################################################
@@ -338,6 +334,19 @@ def get_public_ip():
         time.sleep(RVM_PUBLIC_IP_GETTER_TIMEOUT)
 
 
+# Trigger pooled RVM(s) to execute as proper RVM(s)
+def awaken_pooled_rvm(pooled_rvm_ip, rvm_txt): 
+    family = urllib.parse.quote(sys.argv[1])
+    uvm = urllib.parse.quote(uvm_ip())
+    rvms = urllib.parse.quote(rvm_txt)
+    url = 'rvm_pool_awaken/'+family+'/'+uvm+'/'+rvms
+    if isinstance(pooled_rvm_ip,list):
+        for ip in pooled_rvm_ip:
+            ping_rvm(ip,url)
+    else:
+        ping_rvm(pooled_rvm_ip,url)
+
+
 # Remove own IP from ../ips/rvm.txt, and forward the new list to all other RVMs
 def replace_self_in_rvm_ip_list(public_ip, new_rvm_ip):
     rips = rvm_ips()
@@ -346,6 +355,7 @@ def replace_self_in_rvm_ip_list(public_ip, new_rvm_ip):
         new_rvm_ips.append(new_rvm_ip)
     rvm_txt = '\n'.join(new_rvm_ips)
     write_rvm_ips(rvm_txt)
+    awaken_pooled_rvm(new_rvm_ip,rvm_txt)
     forward_new_rvm_ips_to_rvms(new_rvm_ips,urllib.parse.quote(rvm_txt))
 
 
@@ -386,7 +396,6 @@ def launch_uvm_server(command):
 def become_uvm():
     # 0. Spawn a new RVM to take the current RVM's place
     public_ip = get_public_ip()
-    new_rvm_ip = get_new_rvm_ip()
     EXECUTING_RVM_DAEMONS = False
     # 1. Spawn UVM server to run on this machine
     command = "python3 "+os.getcwd()+"/../uvm/server.py "+sys.argv[1]+" &> logs.txt"
@@ -396,6 +405,7 @@ def become_uvm():
     launch_uvm_server(command)
     # 2. Replace self with the new RVM's IP in the IP address list
     print('lead-rvm> Leader (new UVM) is forwarding new RVM IP address list ...')
+    new_rvm_ip = get_new_rvm_ip()
     replace_self_in_rvm_ip_list(public_ip,new_rvm_ip)
     # 3. Forward own IP address to all RVMs to confirm UVM status
     print('lead-rvm> Leader (new UVM) is forwarding itself as the UVM IP address ...')
@@ -452,12 +462,13 @@ def forward_new_rvm_ips_to_uvm(uvm_ip, ip_address_list):
         print("lead-rvm> Error trying to forward new RVM IP address list to UVM "+uvm_ip)
 
 
-def forward_new_rvm_ips(new_rvm_ips):
+def forward_new_rvm_ips(live_ips, pooled_rvm_ips):
     print('lead-rvm> Forwarding new RVM IP addresses list ...')
-    rvm_txt = '\n'.join(new_rvm_ips) 
+    rvm_txt = '\n'.join(live_ips + pooled_rvm_ips) 
     ip_address_list = urllib.parse.quote(rvm_txt)
     write_rvm_ips(rvm_txt)
-    forward_new_rvm_ips_to_rvms(new_rvm_ips,ip_address_list)
+    awaken_pooled_rvm(pooled_rvm_ips,rvm_txt)
+    forward_new_rvm_ips_to_rvms(live_ips,ip_address_list)
     forward_new_rvm_ips_to_uvm(uvm_ip(),ip_address_list)
     print('lead-rvm> Finished forwarding the new RVM IP addresses list!')
 
@@ -470,7 +481,7 @@ def replace_rvms_if_missing_ping():
         if len(dead_ips) != 0:
             print('lead-rvm> Found dead RVM IPs: '+', '.join(dead_ips))
             live_ips = [ip for ip in rips if ip not in dead_ips]
-            forward_new_rvm_ips(live_ips + get_new_rvm_ips(len(dead_ips)))
+            forward_new_rvm_ips(live_ips,get_new_rvm_ips(len(dead_ips)))
         else:
             print('lead-rvm> Confirmed all RVM IPs are active!')
         time.sleep(RVM_PING_CHECK_TIMEOUT_SECONDS)
@@ -547,10 +558,13 @@ def rvm_pool_awaken(family_id, current_uvm, current_rvms):
     global AWOKEN
     try:
         sys.argv[1] = urllib.parse.unquote(family_id)
+        family_path = '../ips/'+sys.argv[1]+'/'
         with rvm_ips_file_lock:
-            RVM_IPS_FILENAME = '../ips/'+sys.argv[1]+'/rvm.txt'
+            RVM_IPS_FILENAME = family_path+'rvm.txt'
         with uvm_ips_file_lock:
-            UVM_IPS_FILENAME = '../ips/'+sys.argv[1]+'/uvm.txt'
+            UVM_IPS_FILENAME = family_path+'uvm.txt'
+        if not os.path.isdir(family_path):
+            os.makedirs(family_path)
         write_uvm_ip(urllib.parse.unquote(current_uvm))
         write_rvm_ips(urllib.parse.unquote(current_rvms))
         with awoken_lock:

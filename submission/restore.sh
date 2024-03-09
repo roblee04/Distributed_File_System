@@ -1,6 +1,13 @@
-# restore.sh - Restore the original IP addresses in "/ips/"
+# sudo restore.sh - Restore the original IP addresses in "/ips/"
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+rm -r $SCRIPT_DIR/ips/
+mkdir ips
+cd ips
+mkdir 1
+mkdir 2
+cd ..
 
 curl -L https://raw.githubusercontent.com/roblee04/Distributed_File_System/main/submission/ips/1/rvm.txt > $SCRIPT_DIR/ips/1/rvm.txt
 curl -L https://raw.githubusercontent.com/roblee04/Distributed_File_System/main/submission/ips/1/uvm.txt > $SCRIPT_DIR/ips/1/uvm.txt

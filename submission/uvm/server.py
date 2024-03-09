@@ -30,9 +30,6 @@ UVM_MAXIMUM_NUMBER_OF_FILES = 3
 # How long we wait between checks as to whether every RVM has died
 RVM_HEALTH_PING_TIMEOUT = 3
 
-# How long we wait between attempts to send the new RVM IP address list to a seeded RVM
-RVM_SEED_IP_ADDRESS_LIST_PING_TIMEOUT = 0.25
-
 
 ##############################################################################
 # GET Request Helper (returns status code)
@@ -122,17 +119,25 @@ def ping_middleware_for_new_rvm_ip():
         return None
 
 
+# Also registers the IP in the UVM's <rvm.txt> file!
 def get_new_rvm_ip():
-    while True:
-        rip = ping_middleware_for_new_rvm_ip()
-        if rip == None:
-            return None
-        family = urllib.parse.quote(sys.argv[1])
-        uvm = urllib.parse.quote(uvm_ip())
-        rvms = urllib.parse.quote('\n'.join(rvm_ips()))
-        if ping_rvm(rip,'rvm_pool_awaken/'+family+'/'+uvm+'/'+rvms):
-            forward_commands(rip)
-            return rip
+    rip = ping_middleware_for_new_rvm_ip()
+    if rip == None:
+        return None
+    family = urllib.parse.quote(sys.argv[1])
+    uvm = urllib.parse.quote(uvm_ip())
+    rips = rvm_ips()
+    if len(rips) == 0:
+        rips.append(rip)
+    else:
+        rips[0] = rip
+    rvm_txt = '\n'.join(rips)
+    rvms = urllib.parse.quote(rvm_txt)
+    if ping_rvm(rip,'rvm_pool_awaken/'+family+'/'+uvm+'/'+rvms):
+        write_rvm_ips(rvm_txt)
+        forward_commands(rip)
+        return rip
+    return None
 
 
 ##############################################################################
@@ -267,14 +272,8 @@ def spawn_seed_rvm():
     seed_ip = get_new_rvm_ip()
     if seed_ip == None:
         print("uvm> Can't allocate any more RVMs to recover the backup network!")
-        return
-    print('uvm> Spawning an RVM ('+seed_ip+') to seed the network!')
-    rips = rvm_ips()
-    ip_address_list = '\n'.join([seed_ip] + rips[1:])
-    write_rvm_ips(ip_address_list)
-    ip_address_list = urllib.parse.quote(ip_address_list)
-    while not ping_rvm(seed_ip,'rvm_update_rvm_ips/'+ip_address_list):
-        time.sleep(RVM_SEED_IP_ADDRESS_LIST_PING_TIMEOUT)
+    else:
+        print('uvm> Spawned an RVM ('+seed_ip+') to seed the network!')
 
 
 # Continuously verify that we have at least 1 RVM alive in the system
@@ -310,6 +309,8 @@ def uvm_can_be_routed_with(operation, path):
         path = urllib.parse.unquote(path)
         print('uvm> Pinged whether can support operation "'+operation+'" on file "'+path+'"!')
         if fs.exists(path):
+            if operation == 'copy' and number_of_files_in_uvm() > UVM_MAXIMUM_NUMBER_OF_FILES+1:
+                return jsonify({'error': 'UVM can\'t support operation "'+operation+'" for file "'+path+'"'}), 403
             return jsonify({ 'preferred': True }), 200
         if operation == 'exists':
             return jsonify({ 'preferred': False }), 200 # use this UVM iff no others have the file
