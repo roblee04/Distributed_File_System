@@ -169,9 +169,12 @@ def awaken_pooled_rvms(family: str, uvm: str, rvm_ips: list):
     family = urllib.parse.quote(family)
     uvm = urllib.parse.quote(uvm)
     rvms = urllib.parse.quote('\n'.join(rvm_ips))
-    url = 'rvm_pool_awaken/'+family+'/'+uvm+'/'+rvms
+    registration_url = 'rvm_pool_register/'+family+'/'+uvm+'/'+rvms
     for rip in rvm_ips:
-        if not ping_rvm(rip,url):
+        if not ping_rvm(rip,registration_url):
+            print('router> UVM Allocation Warning: failed to register pooled RVM '+rip)
+    for rip in rvm_ips:
+        if not ping_rvm(rip,'rvm_pool_awaken'):
             print('router> UVM Allocation Warning: failed to awaken pooled RVM '+rip)
 
 

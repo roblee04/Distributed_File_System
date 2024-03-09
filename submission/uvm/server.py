@@ -133,7 +133,7 @@ def get_new_rvm_ip():
         rips[0] = rip
     rvm_txt = '\n'.join(rips)
     rvms = urllib.parse.quote(rvm_txt)
-    if ping_rvm(rip,'rvm_pool_awaken/'+family+'/'+uvm+'/'+rvms):
+    if ping_rvm(rip,'rvm_pool_register_and_awaken/'+family+'/'+uvm+'/'+rvms):
         write_rvm_ips(rvm_txt)
         forward_commands(rip)
         return rip

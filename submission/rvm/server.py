@@ -339,12 +339,14 @@ def awaken_pooled_rvm(pooled_rvm_ip, rvm_txt):
     family = urllib.parse.quote(sys.argv[1])
     uvm = urllib.parse.quote(uvm_ip())
     rvms = urllib.parse.quote(rvm_txt)
-    url = 'rvm_pool_awaken/'+family+'/'+uvm+'/'+rvms
     if isinstance(pooled_rvm_ip,list):
+        registration_url = 'rvm_pool_register/'+family+'/'+uvm+'/'+rvms
         for ip in pooled_rvm_ip:
-            ping_rvm(ip,url)
+            ping_rvm(ip,registration_url)
+        for ip in pooled_rvm_ip:
+            ping_rvm(ip,'rvm_pool_awaken')
     else:
-        ping_rvm(pooled_rvm_ip,url)
+        ping_rvm(pooled_rvm_ip,'rvm_pool_register_and_awaken/'+family+'/'+uvm+'/'+rvms)
 
 
 # Remove own IP from ../ips/rvm.txt, and forward the new list to all other RVMs
@@ -551,25 +553,52 @@ def rvm_uvm_ping():
 AWOKEN = False
 awoken_lock = threading.Lock()
 
-@app.route('/rvm_pool_awaken/<family_id>/<current_uvm>/<current_rvms>', methods=['GET'])
-def rvm_pool_awaken(family_id, current_uvm, current_rvms):
+def register_family(family_id, current_uvm, current_rvms):
     global RVM_IPS_FILENAME
     global UVM_IPS_FILENAME
+    sys.argv[1] = urllib.parse.unquote(family_id)
+    family_path = '../ips/'+sys.argv[1]+'/'
+    with rvm_ips_file_lock:
+        RVM_IPS_FILENAME = family_path+'rvm.txt'
+    with uvm_ips_file_lock:
+        UVM_IPS_FILENAME = family_path+'uvm.txt'
+    if not os.path.isdir(family_path):
+        os.makedirs(family_path)
+    write_uvm_ip(urllib.parse.unquote(current_uvm))
+    write_rvm_ips(urllib.parse.unquote(current_rvms))
+    print('pool-rvm> Pooled resource given family '+family_id+' information!')
+
+
+def awaken_pooled_resource():
     global AWOKEN
+    with awoken_lock:
+        AWOKEN = True
+    print('pool-rvm> Pooled resource awoken!')
+
+
+@app.route('/rvm_pool_register/<family_id>/<current_uvm>/<current_rvms>', methods=['GET'])
+def rvm_pool_register(family_id, current_uvm, current_rvms):
     try:
-        sys.argv[1] = urllib.parse.unquote(family_id)
-        family_path = '../ips/'+sys.argv[1]+'/'
-        with rvm_ips_file_lock:
-            RVM_IPS_FILENAME = family_path+'rvm.txt'
-        with uvm_ips_file_lock:
-            UVM_IPS_FILENAME = family_path+'uvm.txt'
-        if not os.path.isdir(family_path):
-            os.makedirs(family_path)
-        write_uvm_ip(urllib.parse.unquote(current_uvm))
-        write_rvm_ips(urllib.parse.unquote(current_rvms))
-        with awoken_lock:
-            AWOKEN = True
-        print('pool-rvm> Pooled resource pinged to awaken!')
+        register_family(family_id,current_uvm,current_rvms)
+        return jsonify({}), 200
+    except Exception as err_msg:
+        return jsonify({'error': str(err_msg)}), 400
+
+
+@app.route('/rvm_pool_awaken/', methods=['GET'])
+def rvm_pool_awaken():
+    try:
+        awaken_pooled_resource()
+        return jsonify({}), 200
+    except Exception as err_msg:
+        return jsonify({'error': str(err_msg)}), 400
+
+
+@app.route('/rvm_pool_register_and_awaken/<family_id>/<current_uvm>/<current_rvms>', methods=['GET'])
+def rvm_pool_register_and_awaken(family_id, current_uvm, current_rvms):
+    try:
+        register_family(family_id,current_uvm,current_rvms)
+        awaken_pooled_resource()
         return jsonify({}), 200
     except Exception as err_msg:
         return jsonify({'error': str(err_msg)}), 400
