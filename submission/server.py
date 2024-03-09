@@ -31,13 +31,23 @@ ROUTER_NEW_UVM_TERMINAL_FAILURE_TIMEOUT = 10
 
 
 ##############################################################################
-# PREALLOCATED VM POOL DISTRIBUTION LOGIC
-IP_ROOT = "./ips/"
-POOL_IPS_FILENAME = IP_ROOT+'pool-ips.txt'
+# Miscellaneous Routing Helper Functions
+def get_request(url: str) -> int:
+    try:
+        return requests.get(url).status_code
+    except Exception as err_msg:
+        print('router> Error requesting url "'+url+'": '+str(err_msg))
+        return 408
+
 
 def ping_rvm(ip_address, command):
     return get_request('http://'+ip_address+':5000/'+command) == 200
 
+
+##############################################################################
+# PREALLOCATED VM POOL DISTRIBUTION LOGIC
+IP_ROOT = "./ips/"
+POOL_IPS_FILENAME = IP_ROOT+'pool-ips.txt'
 
 # Add machine IPs from file
 def machine_pool(file_name: str):
