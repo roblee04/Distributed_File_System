@@ -207,17 +207,19 @@ def get_new_uvm_ip():
 
 # Determine which UVM can execute <operation> on <path>
 def route(operation: str, path: str):
+    print('router> Pinged to route operation <'+operation+'> to path <'+path+'>')
     viable_uvms = []
     with node_lock:
         for ip in nodes:
             response = uvm_can_be_routed_to(ip,operation,path)
             if response != None and response.status_code == 200:
-                print('router> Found viable UVM to route request to! Preferred status = '+str(response.json().get('preferred')))
                 if response.json().get('preferred'):
+                    print('router> Found a preferred UVM to route request to!')
                     return 'http://'+ip+':5001'
                 else:
                     viable_uvms.append(ip)
     if len(viable_uvms) > 0:
+        print('router> Found a viable UVM to route request to!')
         return 'http://'+viable_uvms[0]+":5001"
     print('router> No viable UVMs found to route request to! Attempting to generate a new UVM/RVM unit ...')
     new_uip = get_new_uvm_ip()
@@ -234,7 +236,6 @@ def route(operation: str, path: str):
 def read(path: str):
     try:
         # find route, and send request to node
-        print('router> Pinged to write to '+urllib.parse.unquote(path))
         url_header = route('read',path)
         response = requests.get(url_header+"/read/"+path)
         # when the node responds back, forward response back to client
@@ -251,7 +252,6 @@ def read(path: str):
 @app.route('/write/<path>/<data>', methods=['GET'])
 def write(path: str, data: str):
     try:
-        print('router> Pinged to write to '+urllib.parse.unquote(path))
         # find route, and send request to node
         url_header = route('write',path)
         response = requests.get(url_header+"/write/"+path+"/"+data)
@@ -270,7 +270,6 @@ def write(path: str, data: str):
 @app.route('/delete/<path>', methods=['GET'])
 def delete(path: str):
     try:
-        print('router> Pinged to delete '+urllib.parse.unquote(path))
         url_header = route('delete',path)
         response = requests.get(url_header+"/delete/"+path)
         if response.status_code == 200:
@@ -287,7 +286,6 @@ def delete(path: str):
 @app.route('/copy/<src_path>/<dest_path>', methods=['GET'])
 def copy(src_path: str, dest_path: str):
     try:
-        print('router> Pinged to copy '+urllib.parse.unquote(src_path)+' to '+urllib.parse.unquote(dest_path))
         url_header = route('copy',src_path)
         response = requests.get(url_header+"/copy/"+src_path+"/"+dest_path)
         if response.status_code == 200:
@@ -304,7 +302,6 @@ def copy(src_path: str, dest_path: str):
 @app.route('/rename/<old_path>/<new_path>', methods=['GET'])
 def rename(old_path: str, new_path: str):
     try:
-        print('router> Pinged to rename '+urllib.parse.unquote(old_path)+' as '+urllib.parse.unquote(new_path))
         url_header = route('rename',old_path)
         response = requests.get(url_header+"/rename/"+old_path+"/"+new_path)
         if response.status_code == 200:
@@ -321,7 +318,6 @@ def rename(old_path: str, new_path: str):
 @app.route('/exists/<path>', methods=['GET'])
 def exists(path: str):
     try:
-        print('router> Pinged whether '+urllib.parse.unquote(path)+' exists!')
         url_header = route('exists',path)
         response = requests.get(url_header+"/exists/"+path)
         if response.status_code == 200:
