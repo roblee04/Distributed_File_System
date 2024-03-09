@@ -32,7 +32,14 @@ ROUTER_NEW_UVM_TERMINAL_FAILURE_TIMEOUT = 10
 
 ##############################################################################
 # PREALLOCATED VM POOL DISTRIBUTION LOGIC
-# add machine IPs from file
+IP_ROOT = "./ips/"
+POOL_IPS_FILENAME = IP_ROOT+'pool-ips.txt'
+
+def ping_rvm(ip_address, command):
+    return get_request('http://'+ip_address+':5000/'+command) == 200
+
+
+# Add machine IPs from file
 def machine_pool(file_name: str):
     pool = []
     with open(file_name, 'r') as file:
@@ -41,9 +48,7 @@ def machine_pool(file_name: str):
     return pool
 
 
-# thread safe global variables
-IP_ROOT = "./ips/"
-POOL_IPS_FILENAME = IP_ROOT+'pool-ips.txt'
+# Preallocated pool of VM IPs
 vm_pool_lock = Lock()
 vm_pool = machine_pool(POOL_IPS_FILENAME)
 
@@ -63,7 +68,7 @@ def init_uvms():
     return uvm_ips
 
 
-# thread safe global variables, nodes are UVMS!
+# Nodes are UVMS!
 node_lock = Lock()
 nodes = init_uvms()
 
