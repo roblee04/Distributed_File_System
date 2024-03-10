@@ -263,7 +263,7 @@ def read(path: str):
         else:
             raise Exception("router> Read Error Code " + str(response.status_code))
     except Exception as err_msg:
-        return jsonify({'error': err_msg.args[0]}), 400
+        return jsonify({'error': str(err_msg)}), 400
 
 
 ##############################################################################
@@ -279,9 +279,8 @@ def write(path: str, data: str):
             return jsonify({}), 200
         else:
             raise Exception("router> Write Error Code " + str(response.status_code))
-
     except Exception as err_msg:
-        return jsonify({'error': err_msg.args[0]}), 400
+        return jsonify({'error': str(err_msg)}), 400
 
 
 ##############################################################################
@@ -297,7 +296,7 @@ def delete(path: str):
             raise Exception("router> Delete Error Code " + str(response.status_code))
 
     except Exception as err_msg:
-        return jsonify({'error': err_msg.args[0]}), 400
+        return jsonify({'error': str(err_msg)}), 400
 
 
 ##############################################################################
@@ -313,7 +312,7 @@ def copy(src_path: str, dest_path: str):
             raise Exception("router> Copy Error Code " + str(response.status_code))
 
     except Exception as err_msg:
-        return jsonify({'error': err_msg.args[0]}), 400
+        return jsonify({'error': str(err_msg)}), 400
 
 
 ##############################################################################
@@ -329,7 +328,7 @@ def rename(old_path: str, new_path: str):
             raise Exception("router> Rename Error Code " + str(response.status_code))
 
     except Exception as err_msg:
-        return jsonify({'error': err_msg.args[0]}), 400
+        return jsonify({'error': str(err_msg)}), 400
 
 
 ##############################################################################
@@ -345,7 +344,7 @@ def exists(path: str):
             raise Exception("router> Exists? Error Code " + str(response.status_code))
 
     except Exception as err_msg:
-        return jsonify({'error': err_msg.args[0]}), 400
+        return jsonify({'error': str(err_msg)}), 400
 
 ##############################################################################
 # gives machines to nodes that need it

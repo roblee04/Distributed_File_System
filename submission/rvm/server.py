@@ -605,7 +605,7 @@ def rvm_pool_register_and_awaken(family_id, current_uvm, current_rvms):
 
 
 def initiate_pool_protocol():
-    print('pool-rvm> Pooled RVM resource is awaiting allocation!')
+    print('pool-rvm> Pooled RVM resource is awaiting allocation\n!')
     if sys.argv[1] == '0':
         while True:
             with awoken_lock:

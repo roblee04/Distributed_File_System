@@ -25,14 +25,12 @@ def make_request(endpoint):
 
 
 def handle_failed_request(response, err_message: str):
-    response_json = None
+    exception_message = err_message
     try:
-        response_json = response.json()
+        exception_message = err_message + '. Error: ' + response.json().get('error')
     except Exception:
-        raise Exception(err_message)
-    if not 'error' in response_json:
-        raise Exception(err_message)
-    raise Exception(err_message + '. Error: ' + response_json.get('error'))
+        exception_message = err_message + '. Error: ' + response.text
+    raise Exception(exception_message)
 
 
 ##############################################################################
