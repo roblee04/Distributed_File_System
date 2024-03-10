@@ -148,11 +148,16 @@ def get_number_of_RVMs_per_UVM():
         return len(file.read().strip().split("\n"))
 
 
+def get_uvm_ip(rvm_ips):
+    leader_ips = [int(rip.replace('.','')) for rip in rvm_ips]
+    return rvm_ips[leader_ips.index(max(leader_ips))]
+
+
 def get_replicas_for_rvm_pool(number_RVMs_per_UVM: int):
     rvm_ips = [r for r in [request_replica() for _ in range(number_RVMs_per_UVM)] if r != None]
     if len(rvm_ips) == 0:
         return None, None
-    return rvm_ips, max([int(rip.replace('.','')) for rip in rvm_ips])
+    return rvm_ips, get_uvm_ip(rvm_ips)
 
 
 def populate_rvm_txt(family_path: str, rvm_ips: list):
@@ -216,8 +221,16 @@ def allocate_new_uvm_ip():
         #    * Need to wait for the leader election _and_ UVM escelation procedures to complete in the subnetwork though!
 
 
+
+
+
+
+
         # official_uvm_ip = get_uvm_ip_address(uvm_ip)
         official_uvm_ip = uvm_ip
+
+
+
 
 
 
