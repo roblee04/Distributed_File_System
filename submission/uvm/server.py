@@ -16,6 +16,7 @@ import sys
 import threading
 import time
 import urllib.parse
+from datetime import datetime
 from flask import Flask, request, jsonify
 
 import fs
@@ -32,12 +33,22 @@ RVM_HEALTH_PING_TIMEOUT = 3
 
 
 ##############################################################################
+# Logging Helper(s)
+def current_timestamp():
+    return datetime.now().strftime("%H:%M:%S.%f")[:-3]
+
+
+def log(msg: str):
+    print('['+current_timestamp()+'] uvm> '+msg)
+
+
+##############################################################################
 # GET Request Helper (returns status code)
 def get_request(url: str) -> int:
     try:
         return requests.get(url).status_code
     except Exception as err_msg:
-        print('uvm> Error requesting url "'+url+'": '+str(err_msg))
+        log('Error requesting url "'+url+'": '+str(err_msg))
         return 408
 
 
@@ -78,7 +89,7 @@ def forward_command(original_url):
     for rip in rips:
         rurl = get_forwarded_url(original_url,rip)
         if get_request(rurl) != 200:
-            print('uvm> UVM-to-RVM Forwarding Error: couldn\'t GET '+rurl)
+            log('UVM-to-RVM Forwarding Error: couldn\'t GET '+rurl)
 
 
 ##############################################################################
@@ -95,7 +106,7 @@ def forward_commands(rvm_ip: str):
     with _command_history_lock:
         for command in _command_history:
             if not ping_rvm(rvm_ip,command):
-                print('uvm> Failed to forward action "'+command+'" to VM '+rvm_ip)
+                log('Failed to forward action "'+command+'" to VM '+rvm_ip)
 
 
 ##############################################################################
@@ -111,11 +122,11 @@ def ping_middleware_for_new_rvm_ip():
     try:
         response = requests.get('http://'+middleware_ip()+':8002/getmachine')
         if response.status_code != 200:
-            print('uvm> VM allocation error: Middleware is out of VMs to distribute!')
+            log('VM allocation error: Middleware is out of VMs to distribute!')
             return None
         return response.json().get("replica")
     except Exception as err_msg:
-        print('uvm> VM allocation error: Middleware is out of VMs to distribute!')
+        log('VM allocation error: Middleware is out of VMs to distribute!')
         return None
 
 
@@ -244,7 +255,7 @@ def exists(path: str):
 def uvm_update_rvm_ips(ip_address_list: str):
     try:
         ip_address_list = urllib.parse.unquote(ip_address_list)
-        print('uvm> New RVM <ip_address_list>: '+ip_address_list.strip().replace('\n',', '))
+        log('New RVM <ip_address_list>: '+ip_address_list.strip().replace('\n',', '))
         write_rvm_ips(ip_address_list)
         return jsonify({}), 200
     except Exception as err_msg:
@@ -256,7 +267,7 @@ def uvm_update_rvm_ips(ip_address_list: str):
 @app.route('/uvm_leader_ping', methods=['GET'])
 def uvm_leader_ping():
     try:
-        print('uvm> Pinged by leader!')
+        log('Pinged by leader!')
         return jsonify({}), 200
     except Exception as err_msg:
         return jsonify({'error': str(err_msg)}), 400
@@ -268,12 +279,12 @@ def uvm_leader_ping():
 # => This RVM will automatically elect itself as the leader, then re-spawn all
 #    of the other missing RVMs!
 def spawn_seed_rvm():
-    print('uvm> All RVMs are dead!')
+    log('All RVMs are dead!')
     seed_ip = get_new_rvm_ip()
     if seed_ip == None:
-        print("uvm> Can't allocate any more RVMs to recover the backup network!")
+        log("Can't allocate any more RVMs to recover the backup network!")
     else:
-        print('uvm> Spawned an RVM ('+seed_ip+') to seed the network!')
+        log('Spawned an RVM ('+seed_ip+') to seed the network!')
 
 
 # Continuously verify that we have at least 1 RVM alive in the system
@@ -283,7 +294,7 @@ def keep_rvms_alive():
         failed_count = 0
         for rip in rips:
             if not ping_rvm(rip,'rvm_uvm_ping'):
-                print('uvm> Failed to reach RVM: '+rip)
+                log('Failed to reach RVM: '+rip)
                 failed_count += 1
         if failed_count == len(rips):
             spawn_seed_rvm()
@@ -311,7 +322,7 @@ def uvm_can_be_routed_with(operation, path):
     try:
         operation = urllib.parse.unquote(operation)
         path = urllib.parse.unquote(path)
-        print('uvm> Pinged whether can support operation "'+operation+'" on file "'+path+'"!')
+        log('Pinged whether can support operation "'+operation+'" on file "'+path+'"!')
         if fs.exists(path):
             if operation == 'copy' and not can_add_files_to_this_machine():
                 return jsonify({'error': 'UVM can\'t support operation "'+operation+'" for file "'+path+'"'}), 403

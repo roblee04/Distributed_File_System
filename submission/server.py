@@ -13,6 +13,7 @@
 import os
 from flask import Flask, request, jsonify
 import requests
+from datetime import datetime
 from threading import Lock
 import threading
 import time
@@ -26,13 +27,24 @@ app = Flask(__name__)
 # How long the router waits for a UVM to activate
 UVM_SPAWN_TIME_BUFFER = 8
 
+
+##############################################################################
+# Logging Helper(s)
+def current_timestamp():
+    return datetime.now().strftime("%H:%M:%S.%f")[:-3]
+
+
+def log(msg: str):
+    print('['+current_timestamp()+'] router> '+msg)
+
+
 ##############################################################################
 # Miscellaneous Routing Helper Functions
 def get_request(url: str) -> int:
     try:
         return requests.get(url).status_code
     except Exception as err_msg:
-        print('router> Error requesting url "'+url+'": '+str(err_msg))
+        log('Error requesting url "'+url+'": '+str(err_msg))
         return 408
 
 
@@ -70,7 +82,7 @@ def init_uvms():
                     contents = file.readlines()
                     uvm_ips.extend(contents)
             except IOError as e:
-                print("router> Error opening or reading file "+uvm_file_path+": "+str(e))
+                log("Error opening or reading file "+uvm_file_path+": "+str(e))
     return uvm_ips
 
 
@@ -85,12 +97,12 @@ def request_replica():
             if len(vm_pool) > 0:
                 pip = vm_pool.pop(0)
                 if ping_rvm(pip,'rvm_pool_confirm_waiting'):
-                    print('router> Found an available pool VM: '+pip)
+                    log('Found an available pool VM: '+pip)
                     return pip
                 else:
-                    print('router> Pooled resource '+pip+' is unreachable!')
+                    log('Pooled resource '+pip+' is unreachable!')
             else:
-                print('router> No pool VMs left to allocate!')
+                log('No pool VMs left to allocate!')
                 return None
 
 
@@ -101,7 +113,7 @@ def replace_uvm(old_uvm: str, new_uvm: str):
         return
     with node_lock:
         if old_uvm in nodes:
-            print('router> Replacing UVM IP '+old_uvm+' with '+new_uvm)
+            log('Replacing UVM IP '+old_uvm+' with '+new_uvm)
             nodes[nodes.index(old_uvm)] = new_uvm
         else:
             raise Exception('router> Error: No UVM to be replaced')
@@ -121,7 +133,7 @@ def uvm_can_be_routed_to(ip_address: str, operation: str, path: str):
     try:
         return requests.get('http://'+ip_address+':5001/uvm_can_be_routed_with/'+operation+'/'+path)
     except Exception:
-        print('router> Request Routing: UVM '+ip_address+' is unreachable!')
+        log('Request Routing: UVM '+ip_address+' is unreachable!')
         return None
 
 
@@ -170,10 +182,10 @@ def awaken_pooled_rvms(family: str, uvm: str, rvm_ips: list):
     registration_url = 'rvm_pool_register/'+family+'/'+uvm+'/'+rvms
     for rip in rvm_ips:
         if not ping_rvm(rip,registration_url):
-            print('router> UVM Allocation Warning: failed to register pooled RVM '+rip)
+            log('UVM Allocation Warning: failed to register pooled RVM '+rip)
     for rip in rvm_ips:
         if not ping_rvm(rip,'rvm_pool_awaken'):
-            print('router> UVM Allocation Warning: failed to awaken pooled RVM '+rip)
+            log('UVM Allocation Warning: failed to awaken pooled RVM '+rip)
 
 
 # Also registers new UVM IP address to our <ips/> subdirectory!
@@ -187,7 +199,7 @@ def get_new_uvm_ip(family_id: int):
         # 3. Request enough replicas for the RVMs
         rvm_ips, uvm_ip = get_replicas_for_rvm_pool(number_RVMs_per_UVM)
         if rvm_ips == None:
-            print('router> UVM Allocation Error: Unable to allocate any new machines!')
+            log('UVM Allocation Error: Unable to allocate any new machines!')
             return None
         # 4. Create the family's subdirectory in <ips> if needed
         os.makedirs(family_path)
@@ -202,20 +214,20 @@ def get_new_uvm_ip(family_id: int):
         # 8. Add new UVM IP to <nodes> with <node_lock>
         with node_lock:
             nodes.append(uvm_ip)
-        print('router> Successfully allocated a new UVM/RVM unit! Unit ID = '+family_id+', UVM IP = '+uvm_ip)
+        log('Successfully allocated a new UVM/RVM unit! Unit ID = '+family_id+', UVM IP = '+uvm_ip)
         return uvm_ip
 
 
 def allocate_new_uvm(family_id: int, operation: str, path: str):
-    print('router> Allocating a new VM!')
+    log('Allocating a new VM!')
     new_uip = get_new_uvm_ip(family_id)
     if new_uip == None:
-        print('router> Failed to route request "'+operation+'" with file "'+path+'" to a UVM!')
+        log('Failed to route request "'+operation+'" with file "'+path+'" to a UVM!')
         with ALLOCATED_UVMS_LOCK:
             ALLOCATED_UVMS[family_id] = 'http://'+nodes[0]+':5001' # allow request to fail then trigger client-side exception
     else:
-        print('router> Routing "'+operation+'" with file "'+path+'" to UVM "'+new_uip+'"!')
-        print('router> Waiting '+str(UVM_SPAWN_TIME_BUFFER)+'s for the UVM to spawn prior routing ...')
+        log('Routing "'+operation+'" with file "'+path+'" to UVM "'+new_uip+'"!')
+        log('Waiting '+str(UVM_SPAWN_TIME_BUFFER)+'s for the UVM to spawn prior routing ...')
         time.sleep(UVM_SPAWN_TIME_BUFFER)
         with ALLOCATED_UVMS_LOCK:
             ALLOCATED_UVMS[family_id] = 'http://'+new_uip+":5001"
@@ -223,21 +235,21 @@ def allocate_new_uvm(family_id: int, operation: str, path: str):
 
 # Determine which UVM can execute <operation> on <path>
 def route(operation: str, path: str):
-    print('router> Pinged to route operation <'+operation+'> to path <'+path+'>')
+    log('Pinged to route operation <'+operation+'> to path <'+path+'>')
     viable_uvms = []
     with node_lock:
         for ip in nodes:
             response = uvm_can_be_routed_to(ip,operation,path)
             if response != None and response.status_code == 200:
                 if response.json().get('preferred'):
-                    print('router> Found a preferred UVM to route request to!')
+                    log('Found a preferred UVM to route request to!')
                     return 'http://'+ip+':5001'
                 else:
                     viable_uvms.append(ip)
     if len(viable_uvms) > 0:
-        print('router> Found a viable UVM to route request to!')
+        log('Found a viable UVM to route request to!')
         return 'http://'+viable_uvms[0]+":5001"
-    print('router> No viable UVMs found to route request to! Attempting to generate a new UVM/RVM unit ...')
+    log('No viable UVMs found to route request to! Attempting to generate a new UVM/RVM unit ...')
     with uvm_family_creation_lock:
         family_id = get_next_family_unit_id()
     threading.Thread(target=allocate_new_uvm, args=(family_id,operation,path,), daemon=True).start() # Async start of new resource, tell operation to try again later on
@@ -257,13 +269,13 @@ def read(path: str):
             if isinstance(url_header,int):
                 return jsonify({'token': url_header}), 425 # allocating a VM
         else:
-            print('router> Received duplicate request with token '+str(token)+' !')
+            log('Received duplicate request with token '+str(token)+' !')
             with ALLOCATED_UVMS_LOCK:
                 if token in ALLOCATED_UVMS:
                     url_header = ALLOCATED_UVMS[token] # done allocating
-                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
+                    log('Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                 else:
-                    print('router> Still allocating resource '+str(token)+'! Still waiting ...')
+                    log('Still allocating resource '+str(token)+'! Still waiting ...')
                     return jsonify({'token': token}), 425 # still allocating
         response = requests.get(url_header+"/read/"+path)
         # when the node responds back, forward response back to client
@@ -287,13 +299,13 @@ def write(path: str, data: str):
             if isinstance(url_header,int):
                 return jsonify({'token': url_header}), 425 # allocating a VM
         else:
-            print('router> Received duplicate request with token '+str(token)+' !')
+            log('Received duplicate request with token '+str(token)+' !')
             with ALLOCATED_UVMS_LOCK:
                 if token in ALLOCATED_UVMS:
                     url_header = ALLOCATED_UVMS[token] # done allocating
-                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
+                    log('Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                 else:
-                    print('router> Still allocating resource '+str(token)+'! Still waiting ...')
+                    log('Still allocating resource '+str(token)+'! Still waiting ...')
                     return jsonify({'token': token}), 425 # still allocating
         response = requests.get(url_header+"/write/"+path+"/"+data)
         # when the node responds back, forward reponse back to client
@@ -317,13 +329,13 @@ def delete(path: str):
             if isinstance(url_header,int):
                 return jsonify({'token': url_header}), 425 # allocating a VM
         else:
-            print('router> Received duplicate request with token '+str(token)+' !')
+            log('Received duplicate request with token '+str(token)+' !')
             with ALLOCATED_UVMS_LOCK:
                 if token in ALLOCATED_UVMS:
                     url_header = ALLOCATED_UVMS[token] # done allocating
-                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
+                    log('Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                 else:
-                    print('router> Still allocating resource '+str(token)+'! Still waiting ...')
+                    log('Still allocating resource '+str(token)+'! Still waiting ...')
                     return jsonify({'token': token}), 425 # still allocating
         response = requests.get(url_header+"/delete/"+path)
         if response.status_code == 200:
@@ -346,13 +358,13 @@ def copy(src_path: str, dest_path: str):
             if isinstance(url_header,int):
                 return jsonify({'token': url_header}), 425 # allocating a VM
         else:
-            print('router> Received duplicate request with token '+str(token)+' !')
+            log('Received duplicate request with token '+str(token)+' !')
             with ALLOCATED_UVMS_LOCK:
                 if token in ALLOCATED_UVMS:
                     url_header = ALLOCATED_UVMS[token] # done allocating
-                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
+                    log('Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                 else:
-                    print('router> Still allocating resource '+str(token)+'! Still waiting ...')
+                    log('Still allocating resource '+str(token)+'! Still waiting ...')
                     return jsonify({'token': token}), 425 # still allocating
         response = requests.get(url_header+"/copy/"+src_path+"/"+dest_path)
         if response.status_code == 200:
@@ -375,13 +387,13 @@ def rename(old_path: str, new_path: str):
             if isinstance(url_header,int):
                 return jsonify({'token': url_header}), 425 # allocating a VM
         else:
-            print('router> Received duplicate request with token '+str(token)+' !')
+            log('Received duplicate request with token '+str(token)+' !')
             with ALLOCATED_UVMS_LOCK:
                 if token in ALLOCATED_UVMS:
                     url_header = ALLOCATED_UVMS[token] # done allocating
-                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
+                    log('Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                 else:
-                    print('router> Still allocating resource '+str(token)+'! Still waiting ...')
+                    log('Still allocating resource '+str(token)+'! Still waiting ...')
                     return jsonify({'token': token}), 425 # still allocating
         response = requests.get(url_header+"/rename/"+old_path+"/"+new_path)
         if response.status_code == 200:
@@ -404,13 +416,13 @@ def exists(path: str):
             if isinstance(url_header,int):
                 return jsonify({'token': url_header}), 425 # allocating a VM
         else:
-            print('router> Received duplicate request with token '+str(token)+' !')
+            log('Received duplicate request with token '+str(token)+' !')
             with ALLOCATED_UVMS_LOCK:
                 if token in ALLOCATED_UVMS:
                     url_header = ALLOCATED_UVMS[token] # done allocating
-                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
+                    log('Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                 else:
-                    print('router> Still allocating resource '+str(token)+'! Still waiting ...')
+                    log('Still allocating resource '+str(token)+'! Still waiting ...')
                     return jsonify({'token': token}), 425 # still allocating
         response = requests.get(url_header+"/exists/"+path)
         if response.status_code == 200:
@@ -425,7 +437,7 @@ def exists(path: str):
 # gives machines to nodes that need it
 @app.route('/getmachine', methods=['GET'])
 def get_machine():
-    print('router> Pinged to allocate a VM!')
+    log('Pinged to allocate a VM!')
     return jsonify({'replica': request_replica()}), 200
 
 
