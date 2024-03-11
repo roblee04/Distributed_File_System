@@ -290,8 +290,8 @@ def write(path: str, data: str):
             print('router> Received duplicate request with token '+str(token)+' !')
             with ALLOCATED_UVMS_LOCK:
                 if token in ALLOCATED_UVMS:
-                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                     url_header = ALLOCATED_UVMS[token] # done allocating
+                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                 else:
                     print('router> Still allocating resource '+str(token)+'! Still waiting ...')
                     return jsonify({'token': token}), 425 # still allocating
@@ -320,8 +320,8 @@ def delete(path: str):
             print('router> Received duplicate request with token '+str(token)+' !')
             with ALLOCATED_UVMS_LOCK:
                 if token in ALLOCATED_UVMS:
-                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                     url_header = ALLOCATED_UVMS[token] # done allocating
+                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                 else:
                     print('router> Still allocating resource '+str(token)+'! Still waiting ...')
                     return jsonify({'token': token}), 425 # still allocating
@@ -349,8 +349,8 @@ def copy(src_path: str, dest_path: str):
             print('router> Received duplicate request with token '+str(token)+' !')
             with ALLOCATED_UVMS_LOCK:
                 if token in ALLOCATED_UVMS:
-                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                     url_header = ALLOCATED_UVMS[token] # done allocating
+                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                 else:
                     print('router> Still allocating resource '+str(token)+'! Still waiting ...')
                     return jsonify({'token': token}), 425 # still allocating
@@ -378,8 +378,8 @@ def rename(old_path: str, new_path: str):
             print('router> Received duplicate request with token '+str(token)+' !')
             with ALLOCATED_UVMS_LOCK:
                 if token in ALLOCATED_UVMS:
-                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                     url_header = ALLOCATED_UVMS[token] # done allocating
+                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                 else:
                     print('router> Still allocating resource '+str(token)+'! Still waiting ...')
                     return jsonify({'token': token}), 425 # still allocating
@@ -407,8 +407,8 @@ def exists(path: str):
             print('router> Received duplicate request with token '+str(token)+' !')
             with ALLOCATED_UVMS_LOCK:
                 if token in ALLOCATED_UVMS:
-                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                     url_header = ALLOCATED_UVMS[token] # done allocating
+                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                 else:
                     print('router> Still allocating resource '+str(token)+'! Still waiting ...')
                     return jsonify({'token': token}), 425 # still allocating
