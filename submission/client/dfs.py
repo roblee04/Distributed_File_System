@@ -11,11 +11,15 @@
 #   6. check if a file exists
 
 import requests
+import time
 import urllib
 
 ##############################################################################
-# Middleware IP Address & Port Number
+# Middleware IP Address
 MIDDLEWARE_IP_ADDRESS = "54.215.223.179"
+
+# Middleware timeout to allocate a new resource
+MIDDLEWARE_UVM_SPAWNING_TIMEOUT_SECONDS = 7
 
 
 ##############################################################################
@@ -36,7 +40,16 @@ def handle_failed_request(response, err_message: str):
 ##############################################################################
 # Read the contents of a file
 def read(path: str) -> str:
-    response = make_request("read/"+urllib.parse.quote(path))
+    url = "read/"+urllib.parse.quote(path)
+    response = make_request(url)
+    # Handle waiting for the router to have allocated a new resource
+    if response.status_code == 102:
+        token = response.json().get('token')
+        url = url+'?token='+response.json().get('token')
+        while response.status_code == 102:
+            time.sleep(MIDDLEWARE_UVM_SPAWNING_TIMEOUT_SECONDS)
+            response = make_request(url)
+    # Handle response once resource is allocated as needed
     if response.status_code == 200:
         return response.json().get("data")
     else:
@@ -46,7 +59,16 @@ def read(path: str) -> str:
 ##############################################################################
 # Write data to a file (creates a file if DNE)
 def write(path: str, data: str):
-    response = make_request("write/"+urllib.parse.quote(path)+"/"+urllib.parse.quote(data))
+    url = "write/"+urllib.parse.quote(path)+"/"+urllib.parse.quote(data)
+    response = make_request(url)
+    # Handle waiting for the router to have allocated a new resource
+    if response.status_code == 102:
+        token = response.json().get('token')
+        url = url+'?token='+response.json().get('token')
+        while response.status_code == 102:
+            time.sleep(MIDDLEWARE_UVM_SPAWNING_TIMEOUT_SECONDS)
+            response = make_request(url)
+    # Handle response once resource is allocated as needed
     if response.status_code != 200:
         handle_failed_request(response, "Failed to write to file '"+path+"'")
 
@@ -54,7 +76,16 @@ def write(path: str, data: str):
 ##############################################################################
 # Delete a file
 def delete(path: str):
-    response = make_request("delete/"+urllib.parse.quote(path))
+    url = "delete/"+urllib.parse.quote(path)
+    response = make_request(url)
+    # Handle waiting for the router to have allocated a new resource
+    if response.status_code == 102:
+        token = response.json().get('token')
+        url = url+'?token='+response.json().get('token')
+        while response.status_code == 102:
+            time.sleep(MIDDLEWARE_UVM_SPAWNING_TIMEOUT_SECONDS)
+            response = make_request(url)
+    # Handle response once resource is allocated as needed
     if response.status_code != 200:
         handle_failed_request(response, "Failed to delete file '"+path+"'")
 
@@ -62,7 +93,16 @@ def delete(path: str):
 ##############################################################################
 # Copy a file
 def copy(src_path: str, dest_path: str):
-    response = make_request("copy/"+urllib.parse.quote(src_path)+"/"+urllib.parse.quote(dest_path))
+    url = "copy/"+urllib.parse.quote(src_path)+"/"+urllib.parse.quote(dest_path)
+    response = make_request(url)
+    # Handle waiting for the router to have allocated a new resource
+    if response.status_code == 102:
+        token = response.json().get('token')
+        url = url+'?token='+response.json().get('token')
+        while response.status_code == 102:
+            time.sleep(MIDDLEWARE_UVM_SPAWNING_TIMEOUT_SECONDS)
+            response = make_request(url)
+    # Handle response once resource is allocated as needed
     if response.status_code != 200:
         handle_failed_request(response, "Failed to copy file '"+src_path+"' to '"+dest_path+"'")
 
@@ -70,7 +110,16 @@ def copy(src_path: str, dest_path: str):
 ##############################################################################
 # Rename a file (also moves files)
 def rename(old_path: str, new_path: str):
-    response = make_request("rename/"+urllib.parse.quote(old_path)+"/"+urllib.parse.quote(new_path))
+    url = "rename/"+urllib.parse.quote(old_path)+"/"+urllib.parse.quote(new_path)
+    response = make_request(url)
+    # Handle waiting for the router to have allocated a new resource
+    if response.status_code == 102:
+        token = response.json().get('token')
+        url = url+'?token='+response.json().get('token')
+        while response.status_code == 102:
+            time.sleep(MIDDLEWARE_UVM_SPAWNING_TIMEOUT_SECONDS)
+            response = make_request(url)
+    # Handle response once resource is allocated as needed
     if response.status_code != 200:
         handle_failed_request(response, "Failed to rename file '"+old_path+"' to '"+new_path+"'")
 
@@ -78,7 +127,16 @@ def rename(old_path: str, new_path: str):
 ##############################################################################
 # Checks if a file exists
 def exists(path: str) -> bool:
-    response = make_request("exists/"+urllib.parse.quote(path))
+    url = "exists/"+urllib.parse.quote(path)
+    response = make_request(url)
+    # Handle waiting for the router to have allocated a new resource
+    if response.status_code == 102:
+        token = response.json().get('token')
+        url = url+'?token='+response.json().get('token')
+        while response.status_code == 102:
+            time.sleep(MIDDLEWARE_UVM_SPAWNING_TIMEOUT_SECONDS)
+            response = make_request(url)
+    # Handle response once resource is allocated as needed
     if response.status_code == 200:
         return response.json().get("exists")
     else:
