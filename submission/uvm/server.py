@@ -39,7 +39,7 @@ def current_timestamp():
 
 
 def log(msg: str):
-    print('['+current_timestamp()+'] uvm> '+msg)
+    print('uvm ['+current_timestamp()+']> '+msg)
 
 
 ##############################################################################

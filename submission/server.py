@@ -35,7 +35,7 @@ def current_timestamp():
 
 
 def log(msg: str):
-    print('['+current_timestamp()+'] router> '+msg)
+    print('router ['+current_timestamp()+']> '+msg)
 
 
 ##############################################################################

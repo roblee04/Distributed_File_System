@@ -66,15 +66,15 @@ def current_timestamp():
 
 
 def log_pool(msg: str):
-    print('['+current_timestamp()+'] pool-rvm> '+msg)
+    print('pool-rvm ['+current_timestamp()+']> '+msg)
 
 
 def log_leader(msg: str):
-    print('['+current_timestamp()+'] lead-rvm> '+msg)
+    print('lead-rvm ['+current_timestamp()+']> '+msg)
 
 
 def log(msg: str):
-    print('['+current_timestamp()+'] rvm> '+msg)
+    print('rvm ['+current_timestamp()+']> '+msg)
 
 
 ##############################################################################
