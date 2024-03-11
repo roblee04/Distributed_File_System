@@ -43,10 +43,9 @@ def read(path: str) -> str:
     url = "read/"+urllib.parse.quote(path)
     response = make_request(url)
     # Handle waiting for the router to have allocated a new resource
-    if response.status_code == 102:
-        token = response.json().get('token')
+    if response.status_code == 425:
         url = url+'?token='+response.json().get('token')
-        while response.status_code == 102:
+        while response.status_code == 425:
             time.sleep(MIDDLEWARE_UVM_SPAWNING_TIMEOUT_SECONDS)
             response = make_request(url)
     # Handle response once resource is allocated as needed
@@ -62,10 +61,9 @@ def write(path: str, data: str):
     url = "write/"+urllib.parse.quote(path)+"/"+urllib.parse.quote(data)
     response = make_request(url)
     # Handle waiting for the router to have allocated a new resource
-    if response.status_code == 102:
-        token = response.json().get('token')
+    if response.status_code == 425:
         url = url+'?token='+response.json().get('token')
-        while response.status_code == 102:
+        while response.status_code == 425:
             time.sleep(MIDDLEWARE_UVM_SPAWNING_TIMEOUT_SECONDS)
             response = make_request(url)
     # Handle response once resource is allocated as needed
@@ -79,10 +77,9 @@ def delete(path: str):
     url = "delete/"+urllib.parse.quote(path)
     response = make_request(url)
     # Handle waiting for the router to have allocated a new resource
-    if response.status_code == 102:
-        token = response.json().get('token')
+    if response.status_code == 425:
         url = url+'?token='+response.json().get('token')
-        while response.status_code == 102:
+        while response.status_code == 425:
             time.sleep(MIDDLEWARE_UVM_SPAWNING_TIMEOUT_SECONDS)
             response = make_request(url)
     # Handle response once resource is allocated as needed
@@ -96,10 +93,9 @@ def copy(src_path: str, dest_path: str):
     url = "copy/"+urllib.parse.quote(src_path)+"/"+urllib.parse.quote(dest_path)
     response = make_request(url)
     # Handle waiting for the router to have allocated a new resource
-    if response.status_code == 102:
-        token = response.json().get('token')
+    if response.status_code == 425:
         url = url+'?token='+response.json().get('token')
-        while response.status_code == 102:
+        while response.status_code == 425:
             time.sleep(MIDDLEWARE_UVM_SPAWNING_TIMEOUT_SECONDS)
             response = make_request(url)
     # Handle response once resource is allocated as needed
@@ -113,10 +109,9 @@ def rename(old_path: str, new_path: str):
     url = "rename/"+urllib.parse.quote(old_path)+"/"+urllib.parse.quote(new_path)
     response = make_request(url)
     # Handle waiting for the router to have allocated a new resource
-    if response.status_code == 102:
-        token = response.json().get('token')
+    if response.status_code == 425:
         url = url+'?token='+response.json().get('token')
-        while response.status_code == 102:
+        while response.status_code == 425:
             time.sleep(MIDDLEWARE_UVM_SPAWNING_TIMEOUT_SECONDS)
             response = make_request(url)
     # Handle response once resource is allocated as needed
@@ -130,10 +125,9 @@ def exists(path: str) -> bool:
     url = "exists/"+urllib.parse.quote(path)
     response = make_request(url)
     # Handle waiting for the router to have allocated a new resource
-    if response.status_code == 102:
-        token = response.json().get('token')
+    if response.status_code == 425:
         url = url+'?token='+response.json().get('token')
-        while response.status_code == 102:
+        while response.status_code == 425:
             time.sleep(MIDDLEWARE_UVM_SPAWNING_TIMEOUT_SECONDS)
             response = make_request(url)
     # Handle response once resource is allocated as needed
