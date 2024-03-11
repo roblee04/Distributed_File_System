@@ -19,7 +19,7 @@ import urllib
 MIDDLEWARE_IP_ADDRESS = "54.215.223.179"
 
 # Middleware timeout to allocate a new resource
-MIDDLEWARE_UVM_SPAWNING_TIMEOUT_SECONDS = 2
+MIDDLEWARE_UVM_SPAWNING_TIMEOUT_SECONDS = 1
 
 
 ##############################################################################

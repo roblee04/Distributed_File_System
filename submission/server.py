@@ -20,9 +20,11 @@ import urllib.parse
 
 
 ##############################################################################
-# App Creation
+# App Creation + Invariants
 app = Flask(__name__)
 
+# How long the router waits for a UVM to activate
+UVM_SPAWN_TIME_BUFFER = 8
 
 ##############################################################################
 # Miscellaneous Routing Helper Functions
@@ -212,6 +214,8 @@ def allocate_new_uvm(family_id: int, operation: str, path: str):
             ALLOCATED_UVMS[family_id] = 'http://'+nodes[0]+':5001' # allow request to fail then trigger client-side exception
     else:
         print('router> Routing "'+operation+'" with file "'+path+'" to UVM "'+new_uip+'"!')
+        print('router> Waiting '+str(UVM_SPAWN_TIME_BUFFER)+'s for the UVM to spawn prior routing ...')
+        time.sleep(UVM_SPAWN_TIME_BUFFER)
         with ALLOCATED_UVMS_LOCK:
             ALLOCATED_UVMS[family_id] = 'http://'+new_uip+":5001"
 
