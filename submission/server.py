@@ -203,7 +203,8 @@ def get_new_uvm_ip(family_id: int):
         print('router> Successfully allocated a new UVM/RVM unit! Unit ID = '+family_id+', UVM IP = '+uvm_ip)
 
 
-def allocate_new_uvm(family_id: int):
+def allocate_new_uvm(family_id: int, operation: str, path: str):
+    print('router> Allocating a new VM!')
     new_uip = get_new_uvm_ip(family_id)
     if new_uip == None:
         print('router> Failed to route request "'+operation+'" with file "'+path+'" to a UVM!')
@@ -234,7 +235,7 @@ def route(operation: str, path: str):
     print('router> No viable UVMs found to route request to! Attempting to generate a new UVM/RVM unit ...')
     with uvm_family_creation_lock:
         family_id = get_next_family_unit_id()
-    threading.Thread(target=allocate_new_uvm, args=(family_id,), daemon=False).start() # Async start of new resource, tell operation to try again later on
+    threading.Thread(target=allocate_new_uvm, args=(family_id,operation,path,), daemon=True).start() # Async start of new resource, tell operation to try again later on
     return family_id
     
     
