@@ -62,7 +62,7 @@ LAUNCH_UVM_SYSTEM_TIMEOUT = 0.25
 ##############################################################################
 # Logging Helper(s)
 def current_timestamp():
-    return datetime.now().strftime("%H:%M:%S.%f")[:-3]
+    return datetime.now().strftime("%Hh %Mm %Ss %f")[:-3]+"ms"
 
 
 def log_pool(msg: str):

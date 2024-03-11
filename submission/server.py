@@ -31,7 +31,7 @@ UVM_SPAWN_TIME_BUFFER = 8
 ##############################################################################
 # Logging Helper(s)
 def current_timestamp():
-    return datetime.now().strftime("%H:%M:%S.%f")[:-3]
+    return datetime.now().strftime("%Hh %Mm %Ss %f")[:-3]+"ms"
 
 
 def log(msg: str):
