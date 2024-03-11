@@ -29,7 +29,6 @@ def make_request(endpoint):
 
 
 def handle_failed_request(response, err_message: str):
-    exception_message = err_message
     try:
         exception_message = err_message + '. Error: ' + response.json().get('error')
     except Exception:
