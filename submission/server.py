@@ -203,6 +203,7 @@ def get_new_uvm_ip(family_id: int):
         with node_lock:
             nodes.append(uvm_ip)
         print('router> Successfully allocated a new UVM/RVM unit! Unit ID = '+family_id+', UVM IP = '+uvm_ip)
+        return uvm_ip
 
 
 def allocate_new_uvm(family_id: int, operation: str, path: str):
