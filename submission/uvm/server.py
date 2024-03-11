@@ -212,7 +212,7 @@ def copy(src_path: str, dest_path: str):
         src_path = urllib.parse.unquote(src_path)
         dest_path = urllib.parse.unquote(dest_path)
         if fs.exists(src_path) and not can_add_files_to_this_machine():
-            err_msg = '[copy] Insufficient file storage to create file "'+path+'"'
+            err_msg = '[copy] Insufficient file storage to create file "'+src_path+'"'
             log(err_msg)
             return jsonify({'error': err_msg}), 400
         fs.copy(src_path,dest_path)
