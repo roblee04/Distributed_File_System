@@ -176,6 +176,10 @@ def write(path: str, data: str):
     try:
         path = urllib.parse.unquote(path)
         data = urllib.parse.unquote(data)
+        if not fs.exists(path) and not can_add_files_to_this_machine():
+            err_msg = '[write] Insufficient file storage to create file "'+path+'"'
+            log(err_msg)
+            return jsonify({'error': err_msg}), 400
         fs.write(path,data)
         register_command(request.url)
         forward_command(request.url)
@@ -207,6 +211,10 @@ def copy(src_path: str, dest_path: str):
     try:
         src_path = urllib.parse.unquote(src_path)
         dest_path = urllib.parse.unquote(dest_path)
+        if fs.exists(src_path) and not can_add_files_to_this_machine():
+            err_msg = '[copy] Insufficient file storage to create file "'+path+'"'
+            log(err_msg)
+            return jsonify({'error': err_msg}), 400
         fs.copy(src_path,dest_path)
         register_command(request.url)
         forward_command(request.url)
