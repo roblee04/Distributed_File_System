@@ -289,7 +289,7 @@ def write(path: str, data: str):
             print('router> Received duplicate request with token '+str(token)+' !')
             with ALLOCATED_UVMS_LOCK:
                 if token in ALLOCATED_UVMS:
-                    print('router> Finished allocating resource '+str(token)+'! Operation will continue.')
+                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                     url_header = ALLOCATED_UVMS[token] # done allocating
                 else:
                     print('router> Still allocating resource '+str(token)+'! Still waiting ...')
@@ -319,7 +319,7 @@ def delete(path: str):
             print('router> Received duplicate request with token '+str(token)+' !')
             with ALLOCATED_UVMS_LOCK:
                 if token in ALLOCATED_UVMS:
-                    print('router> Finished allocating resource '+str(token)+'! Operation will continue.')
+                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                     url_header = ALLOCATED_UVMS[token] # done allocating
                 else:
                     print('router> Still allocating resource '+str(token)+'! Still waiting ...')
@@ -348,7 +348,7 @@ def copy(src_path: str, dest_path: str):
             print('router> Received duplicate request with token '+str(token)+' !')
             with ALLOCATED_UVMS_LOCK:
                 if token in ALLOCATED_UVMS:
-                    print('router> Finished allocating resource '+str(token)+'! Operation will continue.')
+                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                     url_header = ALLOCATED_UVMS[token] # done allocating
                 else:
                     print('router> Still allocating resource '+str(token)+'! Still waiting ...')
@@ -377,7 +377,7 @@ def rename(old_path: str, new_path: str):
             print('router> Received duplicate request with token '+str(token)+' !')
             with ALLOCATED_UVMS_LOCK:
                 if token in ALLOCATED_UVMS:
-                    print('router> Finished allocating resource '+str(token)+'! Operation will continue.')
+                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                     url_header = ALLOCATED_UVMS[token] # done allocating
                 else:
                     print('router> Still allocating resource '+str(token)+'! Still waiting ...')
@@ -406,7 +406,7 @@ def exists(path: str):
             print('router> Received duplicate request with token '+str(token)+' !')
             with ALLOCATED_UVMS_LOCK:
                 if token in ALLOCATED_UVMS:
-                    print('router> Finished allocating resource '+str(token)+'! Operation will continue.')
+                    print('router> Finished allocating resource '+str(token)+'! Operation will continue at url: '+url_header)
                     url_header = ALLOCATED_UVMS[token] # done allocating
                 else:
                     print('router> Still allocating resource '+str(token)+'! Still waiting ...')
