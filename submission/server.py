@@ -354,7 +354,7 @@ def copy(src_path: str, dest_path: str):
     try:
         token = int(request.args.get('token','-1'))
         if token == -1:
-            url_header = route('copy',path)
+            url_header = route('copy',src_path)
             if isinstance(url_header,int):
                 return jsonify({'token': url_header}), 425 # allocating a VM
         else:
@@ -383,7 +383,7 @@ def rename(old_path: str, new_path: str):
     try:
         token = int(request.args.get('token','-1'))
         if token == -1:
-            url_header = route('rename',path)
+            url_header = route('rename',old_path)
             if isinstance(url_header,int):
                 return jsonify({'token': url_header}), 425 # allocating a VM
         else:
