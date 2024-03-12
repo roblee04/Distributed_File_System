@@ -364,8 +364,11 @@ def awaken_pooled_rvm(pooled_rvm_ip, rvm_txt):
             ping_rvm(ip,registration_url)
         for ip in pooled_rvm_ip:
             ping_rvm(ip,'rvm_pool_awaken')
+        for ip in pooled_rvm_ip:
+            forward_commands(ip)
     else:
         ping_rvm(pooled_rvm_ip,'rvm_pool_register_and_awaken/'+family+'/'+uvm+'/'+rvms)
+        forward_commands(pooled_rvm_ip)
 
 
 # Remove own IP from ../ips/rvm.txt, and forward the new list to all other RVMs
