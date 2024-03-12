@@ -249,6 +249,10 @@ def route(operation: str, path: str):
     if len(viable_uvms) > 0:
         log('Found a viable UVM to route request to!')
         return 'http://'+viable_uvms[0]+":5001"
+    if operation != 'write':
+        if operation == 'exists':
+            return False # file does not exist
+        raise Exception('router> ['+operation+'] Path "'+path+'" does not exist!')
     log('No viable UVMs found to route request to! Attempting to generate a new UVM/RVM unit ...')
     with uvm_family_creation_lock:
         family_id = get_next_family_unit_id()
@@ -415,6 +419,8 @@ def exists(path: str):
             url_header = route('exists',path)
             if isinstance(url_header,int):
                 return jsonify({'token': url_header}), 425 # allocating a VM
+            if isinstance(url_header,bool):
+                return jsonify({'exists': url_header}), 200 # resolved whether existed early
         else:
             log('Received duplicate request with token '+str(token)+' !')
             with ALLOCATED_UVMS_LOCK:
