@@ -153,7 +153,7 @@ def main():
   print('\n\n===============================================================================')
   print('Profiling Executing '+str(NUMBER_OF_CONCURRENT_CLIENTS_TO_RUN)+' Clients:')
   print('===============================================================================\n')
-  profile_multiple_clients() # assumes UVM's <UVM_MAXIMUM_NUMBER_OF_FILES> is 300
+  profile_multiple_clients()
 
 
 main()
