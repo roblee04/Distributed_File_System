@@ -379,7 +379,8 @@ def replace_self_in_rvm_ip_list(public_ip, new_rvm_ip):
         new_rvm_ips.append(new_rvm_ip)
     rvm_txt = '\n'.join(new_rvm_ips)
     write_rvm_ips(rvm_txt)
-    awaken_pooled_rvm(new_rvm_ip,rvm_txt)
+    if new_rvm_ip != None:
+        awaken_pooled_rvm(new_rvm_ip,rvm_txt)
     forward_new_rvm_ips_to_rvms(new_rvm_ips,urllib.parse.quote(rvm_txt))
 
 
@@ -627,8 +628,8 @@ def rvm_pool_register_and_awaken(family_id, current_uvm, current_rvms):
 
 
 def initiate_pool_protocol():
-    log_pool('Pooled RVM resource is awaiting allocation\n!')
     if sys.argv[1] == '0':
+        log_pool('Pooled RVM resource is awaiting allocation\n!')
         while True:
             with awoken_lock:
                 if AWOKEN:

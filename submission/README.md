@@ -39,6 +39,7 @@ pip install Flask
      - Also manages RVM/UVM server health, getting replacements as needed.
      - Also acts on standby if pooled to be allocated later as needed.
 4. `server.py`: Middleware/router that clients ping to access our DFS.
+5. `metrics.py`: Script to analyze DFS performance. Run as: `python3 metrics.py`
 
 
 --------------------------------------------------------------------
