@@ -134,6 +134,9 @@ def total_files_possibly_created():
 
 
 def profile_UVM_allocation():
+  global TOTAL_SAMPLES_TO_AVERAGE_OPERATIONS_OVER
+  old = TOTAL_SAMPLES_TO_AVERAGE_OPERATIONS_OVER
+  TOTAL_SAMPLES_TO_AVERAGE_OPERATIONS_OVER = 1
   n = total_files_possibly_created()
   for i in range(n):
     dfs.write('file-'+str(i),'random data #'+str(i)) # flood first UVM
@@ -144,6 +147,7 @@ def profile_UVM_allocation():
     print('\n**********************************************************')
     print('> Allocating a UVM took '+ms_str(rtt)+'ms!')
     print('**********************************************************\n')
+  TOTAL_SAMPLES_TO_AVERAGE_OPERATIONS_OVER = old
 
 
 ##############################################################################
