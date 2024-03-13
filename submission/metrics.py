@@ -195,7 +195,7 @@ def main():
   print('\n\n===============================================================================')
   print('Profiling Allocating a New UVM:')
   print('===============================================================================\n')
-  # > Allocating a UVM took 873.206ms!
+  # > Allocating a UVM took 8284.931ms!
   profile_UVM_allocation()
 
   # Time to launch a new RVM, observed as: 0.523s
