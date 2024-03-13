@@ -10,10 +10,10 @@ from client import dfs
 ##############################################################################
 # Invariants
 # Number of times to average out each operation's RTT over
-TOTAL_SAMPLES_TO_AVERAGE_OPERATIONS_OVER = 3
+TOTAL_SAMPLES_TO_AVERAGE_OPERATIONS_OVER = 10
 
 # Number of clients we want to test accessing the system concurrently with
-NUMBER_OF_CONCURRENT_CLIENTS_TO_RUN = 3
+NUMBER_OF_CONCURRENT_CLIENTS_TO_RUN = 10
 
 # Mutex to syncronize printing several lines at once in a single thread
 PRINTER_LOCK = threading.Lock()
@@ -103,16 +103,18 @@ def run_client():
 
 
 def profile_multiple_clients():
+  global CLIENT_RESULTS_LIST
+  CLIENT_RESULTS_LIST = []
   for _ in range(NUMBER_OF_CONCURRENT_CLIENTS_TO_RUN):
     threading.Thread(target=run_client).start()
   while total_results() < NUMBER_OF_CONCURRENT_CLIENTS_TO_RUN:
     time.sleep(0.5)
-  read = sum([run[0] for run in CLIENT_RESULTS_LIST])/TOTAL_SAMPLES_TO_AVERAGE_OPERATIONS_OVER
-  write = sum([run[1] for run in CLIENT_RESULTS_LIST])/TOTAL_SAMPLES_TO_AVERAGE_OPERATIONS_OVER
-  delete = sum([run[2] for run in CLIENT_RESULTS_LIST])/TOTAL_SAMPLES_TO_AVERAGE_OPERATIONS_OVER
-  copy = sum([run[3] for run in CLIENT_RESULTS_LIST])/TOTAL_SAMPLES_TO_AVERAGE_OPERATIONS_OVER
-  rename = sum([run[4] for run in CLIENT_RESULTS_LIST])/TOTAL_SAMPLES_TO_AVERAGE_OPERATIONS_OVER
-  exists = sum([run[5] for run in CLIENT_RESULTS_LIST])/TOTAL_SAMPLES_TO_AVERAGE_OPERATIONS_OVER
+  read = sum([run[0] for run in CLIENT_RESULTS_LIST])/len(CLIENT_RESULTS_LIST)
+  write = sum([run[1] for run in CLIENT_RESULTS_LIST])/len(CLIENT_RESULTS_LIST)
+  delete = sum([run[2] for run in CLIENT_RESULTS_LIST])/len(CLIENT_RESULTS_LIST)
+  copy = sum([run[3] for run in CLIENT_RESULTS_LIST])/len(CLIENT_RESULTS_LIST)
+  rename = sum([run[4] for run in CLIENT_RESULTS_LIST])/len(CLIENT_RESULTS_LIST)
+  exists = sum([run[5] for run in CLIENT_RESULTS_LIST])/len(CLIENT_RESULTS_LIST)
   with PRINTER_LOCK:
     print('\n**********************************************************')
     print('> Running '+str(NUMBER_OF_CONCURRENT_CLIENTS_TO_RUN)+' clients; RTT averages over '+str(TOTAL_SAMPLES_TO_AVERAGE_OPERATIONS_OVER)+' runs:')
@@ -136,6 +138,8 @@ def profile_UVM_allocation():
   for i in range(n):
     dfs.write('file-'+str(i),'random data #'+str(i)) # flood first UVM
   rtt = profile_RTT('UVM Allocation',dfs.write,'file-'+str(n),'random data #'+str(n))
+  for i in range(n+1):
+    dfs.delete('file-'+str(i))
   with PRINTER_LOCK:
     print('\n**********************************************************')
     print('> Allocating a UVM took '+ms_str(rtt)+'ms!')
@@ -144,36 +148,55 @@ def profile_UVM_allocation():
 
 ##############################################################################
 # Main Execution
-
-
-
-
-
-# [ ] METRICS TO COLLECT:
-#     * TIME TO INTEGRATE A NEW RVM ONCE DOWNED
-#     * TIME TO ELECT A NEW RVM LEADER
-#     * TIME TO GET A NEW UVM RUNNING ONCE A UVM GOES DOWN
-
-
-
-
-
 def main():
+  global NUMBER_OF_CONCURRENT_CLIENTS_TO_RUN
   print('\n>> IMPORTANT: Make sure your UVMs have <UVM_MAXIMUM_NUMBER_OF_FILES = '+str(total_files_possibly_created())+'>!')
   print('   * Otherwise won\'t have enough disk for our concurrent client requests!')
   print('\n>> IMPORTANT: Assumes enough pooled RVMs to allocate a new UVM/RVM unit!')
   print('\n===============================================================================')
   print('Profiling Executing 1 Client:')
   print('===============================================================================\n')
+  # > Running client ID=8673235520; RTT averages over 10 runs:
+  # -> read: 26.167ms
+  # -> write: 43.131ms
+  # -> delete: 41.901ms
+  # -> copy: 42.146ms
+  # -> rename: 43.987ms
+  # -> exists: 28.763ms
   profile_single_client()
+  NUMBER_OF_CONCURRENT_CLIENTS_TO_RUN = int(NUMBER_OF_CONCURRENT_CLIENTS_TO_RUN/2)
   print('\n\n===============================================================================')
   print('Profiling Executing '+str(NUMBER_OF_CONCURRENT_CLIENTS_TO_RUN)+' Clients:')
   print('===============================================================================\n')
+  # > Running 5 clients; RTT averages over 10 runs:
+  # -> read: 30.296ms
+  # -> write: 50.776ms
+  # -> delete: 46.6ms
+  # -> copy: 46.168ms
+  # -> rename: 47.281ms
+  # -> exists: 30.63ms
+  profile_multiple_clients()
+  NUMBER_OF_CONCURRENT_CLIENTS_TO_RUN *= 2
+  print('\n\n===============================================================================')
+  print('Profiling Executing '+str(NUMBER_OF_CONCURRENT_CLIENTS_TO_RUN)+' Clients:')
+  print('===============================================================================\n')
+  # > Running 10 clients; RTT averages over 10 runs:
+  # -> read: 63.979ms
+  # -> write: 83.777ms
+  # -> delete: 84.565ms
+  # -> copy: 91.063ms
+  # -> rename: 77.709ms
+  # -> exists: 61.922ms
   profile_multiple_clients()
   print('\n\n===============================================================================')
   print('Profiling Allocating a New UVM:')
   print('===============================================================================\n')
+  # > Allocating a UVM took 873.206ms!
   profile_UVM_allocation()
+
+  # Time to launch a new RVM, observed as: 0.523s
+  # Time to launch a new RVM leader, observed as: 3.259s
+  # Time to replace a UVM, observed as: 0.943s
 
 
 main()
