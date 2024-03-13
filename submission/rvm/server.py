@@ -25,7 +25,7 @@ import sys
 import threading
 import time
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import Flask, request, jsonify
 
 import fs
@@ -62,7 +62,7 @@ LAUNCH_UVM_SYSTEM_TIMEOUT = 0.25
 ##############################################################################
 # Logging Helper(s)
 def current_timestamp():
-    return datetime.now().strftime("%Hh %Mm %Ss %f")[:-3]+"ms"
+    return datetime.now(timezone.utc).strftime("%Hh %Mm %Ss %f")[:-3]+"ms"
 
 
 def log_pool(msg: str):

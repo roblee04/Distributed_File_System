@@ -13,7 +13,7 @@
 import os
 from flask import Flask, request, jsonify
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 from threading import Lock
 import threading
 import time
@@ -31,7 +31,7 @@ UVM_SPAWN_TIME_BUFFER = 8
 ##############################################################################
 # Logging Helper(s)
 def current_timestamp():
-    return datetime.now().strftime("%Hh %Mm %Ss %f")[:-3]+"ms"
+    return datetime.now(timezone.utc).strftime("%Hh %Mm %Ss %f")[:-3]+"ms"
 
 
 def log(msg: str):

@@ -16,7 +16,7 @@ import sys
 import threading
 import time
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import Flask, request, jsonify
 
 import fs
@@ -35,7 +35,7 @@ RVM_HEALTH_PING_TIMEOUT = 3
 ##############################################################################
 # Logging Helper(s)
 def current_timestamp():
-    return datetime.now().strftime("%Hh %Mm %Ss %f")[:-3]+"ms"
+    return datetime.now(timezone.utc).strftime("%Hh %Mm %Ss %f")[:-3]+"ms"
 
 
 def log(msg: str):

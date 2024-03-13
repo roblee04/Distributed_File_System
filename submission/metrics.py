@@ -126,9 +126,24 @@ def profile_multiple_clients():
 
 
 ##############################################################################
-# Main Execution
+# Profile Allocating a new UVM
 def total_files_possibly_created():
   return 3 * NUMBER_OF_CONCURRENT_CLIENTS_TO_RUN
+
+
+def profile_UVM_allocation():
+  n = total_files_possibly_created()
+  for i in range(n):
+    dfs.write('file-'+str(i),'random data #'+str(i)) # flood first UVM
+  rtt = profile_RTT('UVM Allocation',dfs.write,'file-'+str(n),'random data #'+str(n))
+  with PRINTER_LOCK:
+    print('\n**********************************************************')
+    print('> Allocating a UVM took '+ms_str(rtt)+'ms!')
+    print('**********************************************************\n')
+
+
+##############################################################################
+# Main Execution
 
 
 
@@ -138,6 +153,7 @@ def total_files_possibly_created():
 #     * TIME TO INTEGRATE A NEW RVM ONCE DOWNED
 #     * TIME TO ELECT A NEW RVM LEADER
 #     * TIME TO GET A NEW UVM RUNNING ONCE A UVM GOES DOWN
+
 
 
 
@@ -154,6 +170,10 @@ def main():
   print('Profiling Executing '+str(NUMBER_OF_CONCURRENT_CLIENTS_TO_RUN)+' Clients:')
   print('===============================================================================\n')
   profile_multiple_clients()
+  print('\n\n===============================================================================')
+  print('Profiling Allocating a New UVM:')
+  print('===============================================================================\n')
+  profile_UVM_allocation()
 
 
 main()
